@@ -1,0 +1,22 @@
+-R src FJ
+
+src/Base.v
+src/Lists.v
+src/Tactics.v
+src/Util/Environment.v
+src/Util/Id.v
+src/Util/Referable.v
+src/FJ/Lemmas.v
+src/FJ/Syntax.v
+src/FJ/ClassTable.v
+src/FJ/TypeSafety.v
+src/FJ/EvaluationContext.v
+src/FJ/Semantics.v
+src/FJ/Axioms.v
+src/Lists/Forall2.v
+src/Lists/In.v
+src/Lists/Nth_error.v
+src/Lists/ZipWith.v
+src/Tactics/Crush.v
+src/Tactics/LibTactics.v
+src/Tactics/Case.v
