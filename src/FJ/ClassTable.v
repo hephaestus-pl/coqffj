@@ -1,10 +1,9 @@
 Require Import Decidable Relations.
 Require Import Base.
 Require Import FJ.Syntax.
-Require Import FJ.Semantics.
 
 (* We assume a fixed CT *)
-Parameter CT: [ClassDecl].
+Parameter CT: [Class].
 
 Reserved Notation "C '<:' D " (at level 40).
 Inductive Subtype : id -> ClassName -> Prop :=
@@ -14,7 +13,7 @@ Inductive Subtype : id -> ClassName -> Prop :=
     D <: E -> 
     C <: E
   | S_Decl: forall C D fs noDupfs K mds noDupMds,
-    find C CT = Some (CDecl C D fs noDupfs K mds noDupMds ) ->
+    find C CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds )) ->
     C <: D
 where "C '<:' D" := (Subtype C D).
 Hint Constructors Subtype.
@@ -23,6 +22,27 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
+
+Fixpoint succ (C: Class) ct : option ClassRefinement :=
+  match ct with
+  | nil => None
+  | c :: cs => 
+   match c with 
+    | CD _ => succ C cs
+    | CR CRef => 
+     match CRef with
+      | CRefine C' _ 0 _ _ _ _ _ => if beq_id (ref C) C' then Some CRef else None
+      | CRefine _ _ (S n) _ _ _ _ _ => succ C cs
+    end
+  end
+  end.
+
+Fixpoint succ : ClassName -> ClassName :=
+  match CT with
+  | nil => Object
+  | c :: cs => match c with 
+               | CD (CDecl id _ _ _ _ _ _) =>
+               | CR (CRefine id _ _ _ _ _ _ _) => 
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.

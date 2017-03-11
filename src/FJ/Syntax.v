@@ -52,28 +52,51 @@ Inductive Assignment :=
 Inductive Constructor :=
   | KDecl : id -> [FormalArg] -> [Argument] -> [Assignment] -> Constructor.
 
+Inductive ConstructorRefine :=
+  | KRefine : id -> [FormalArg] -> [Argument] -> [Assignment] -> ConstructorRefine.
 
-(* Arguments cannot have duplicate names *)
+
 Inductive MethodDecl :=
-  | MDecl : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl.
+  (* MDecl is the return of the method, its name and nonduplicate list of formal args *)
+  | MDecl : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl
+  (* MRefine is the same *)
+  | MRefine : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl
+.
 
 
 Instance MDeclRef : Referable MethodDecl :={
   ref mdecl := 
     match mdecl with 
-   | MDecl _ id _ _ _ => id end
+   | MDecl _ id _ _ _ => id
+   | MRefine _ id _ _ _ => id end
 }.
 
-Inductive ClassDecl:=
+Inductive ClassDecl :=
+  (* CDecl is the name of the class, the superclass, non duplicate fields,
+  constructor and non duplicate methods *)
   | CDecl: id -> ClassName -> 
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> Constructor -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassDecl.
 
-Instance CDeclRef : Referable ClassDecl :={
+Inductive ClassRefinement :=
+  (* CRefine is the name of the class, the refinement name
+  and the refinement ordinal used to build the refinement chain
+  , non duplicate fields,
+  constructor and non duplicate methods *)
+  | CRefine: id -> id -> nat ->
+    forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
+    forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassRefinement.
+
+Inductive Class :=
+  | CD : ClassDecl -> Class
+  | CR : ClassRefinement -> Class.
+
+Instance CRef : Referable Class :={
   ref cdecl := 
     match cdecl with 
-   | CDecl id _ _ _ _ _ _ => id end
+   | CD (CDecl id _ _ _ _ _ _) => id
+   | CR (CRefine id _ _ _ _ _ _ _) => id end
 }.
 
 Inductive Program :=
-  | CProgram : forall (cDecls: [ClassDecl]), NoDup (refs cDecls) -> Exp -> Program.
+  | CProgram : forall (cDecls: [Class]), NoDup (refs cDecls) -> Exp -> Program.
