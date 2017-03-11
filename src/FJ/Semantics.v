@@ -268,3 +268,11 @@ fix F (e : Exp) (c : ClassName) (e0 : Gamma |-- e : c) {struct e0} : P e c :=
   | T_DCast _ e1 C D e2 s n => f4 e1 C D e2 (F e1 D e2) s n
   | T_SCast _ e1 D C e2 s s0 w => f5 e1 D C e2 (F e1 D e2) s s0 w
   end.
+
+
+Module CTSanity.
+Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds, 
+  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
+Hint Resolve ClassesOK.
+End CTSanity.
