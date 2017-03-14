@@ -58,16 +58,22 @@ Inductive ConstructorRefine :=
 
 Inductive MethodDecl :=
   (* MDecl is the return of the method, its name and nonduplicate list of formal args *)
-  | MDecl : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl
-  (* MRefine is the same *)
-  | MRefine : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl
+  | MDecl : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl.
+
+Inductive MethodRefinement :=
+| MRefine : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodRefinement
 .
 
 
 Instance MDeclRef : Referable MethodDecl :={
   ref mdecl := 
     match mdecl with 
-   | MDecl _ id _ _ _ => id
+   | MDecl _ id _ _ _ => id end
+}.
+
+Instance MRefineRef : Referable MethodRefinement :={
+  ref mrefine := 
+    match mrefine with 
    | MRefine _ id _ _ _ => id end
 }.
 
@@ -98,12 +104,14 @@ Inductive ClassRefinement :=
   constructor and non duplicate methods *)
   | CRefine: id -> FeatureName ->
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
-    forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassRefinement.
+    forall (mDecls:[MethodDecl]), NoDup (refs mDecls) ->
+    forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
+ ClassRefinement.
 
 Instance CRefinementRef : Referable ClassRefinement :={
   ref cdecl := 
     match cdecl with 
-   | (CRefine id _ _ _ _ _ _) => id end
+   | (CRefine id _ _ _ _ _ _ _ _) => id end
 }.
 
 Inductive Class :=
@@ -119,3 +127,5 @@ Instance CRef : Referable Class :={
 
 Inductive Program :=
   | CProgram : forall (cDecls: [Class]), NoDup (refs cDecls) -> Exp -> Program.
+
+Parameter CT: [ClassDecl].
