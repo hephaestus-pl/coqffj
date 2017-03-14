@@ -104,12 +104,9 @@ VFILES:=src/Base.v\
   src/Util/Referable.v\
   src/FJ/Lemmas.v\
   src/FJ/Syntax.v\
-  src/FJ/ClassTable.v\
-  src/FJ/RefinementTable.v\
   src/FJ/TypeSafety.v\
   src/FJ/EvaluationContext.v\
   src/FJ/Semantics.v\
-  src/FJ/Axioms.v\
   src/Lists/Forall2.v\
   src/Lists/In.v\
   src/Lists/Nth_error.v\

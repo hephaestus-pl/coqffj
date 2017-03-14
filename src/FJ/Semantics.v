@@ -1,8 +1,26 @@
 Require Import String.
-Require Import Relations.
+Require Import Relations Decidable.
 Require Import FJ.Base.
 Require Import FJ.Syntax.
-Require Import FJ.ClassTable.
+
+Reserved Notation "C '<:' D " (at level 40).
+Inductive Subtype : id -> ClassName -> Prop :=
+  | S_Refl: forall C: ClassName, C <: C
+  | S_Trans: forall (C D E: ClassName), 
+    C <: D -> 
+    D <: E -> 
+    C <: E
+  | S_Decl: forall C D fs noDupfs K mds noDupMds,
+    find C CT = Some (CDecl C D fs noDupfs K mds noDupMds ) ->
+    C <: D
+where "C '<:' D" := (Subtype C D).
+Hint Constructors Subtype.
+
+Tactic Notation "subtype_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
+  | Case_aux c "S_Decl"].
+
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -213,6 +231,29 @@ Inductive CType_OK: ClassDecl -> Prop :=
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
+(* Hypothesis for ClassTable sanity *)
+Module CTSanity.
+
+Hypothesis dec_subtype: forall C D,
+  decidable (Subtype C D).
+
+Hypothesis antisym_subtype:
+  antisymmetric _ Subtype.
+
+Hypothesis obj_notin_dom: find Object CT = None.
+Hint Rewrite obj_notin_dom.
+
+Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
+  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  D <> Object ->
+  exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
+
+Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds, 
+  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
+Hint Resolve ClassesOK.
+
+End CTSanity.
 
 Definition ExpTyping_ind' := 
   fun (Gamma : env ClassName) (P : Exp -> ClassName -> Prop)
@@ -268,11 +309,3 @@ fix F (e : Exp) (c : ClassName) (e0 : Gamma |-- e : c) {struct e0} : P e c :=
   | T_DCast _ e1 C D e2 s n => f4 e1 C D e2 (F e1 D e2) s n
   | T_SCast _ e1 D C e2 s s0 w => f5 e1 D C e2 (F e1 D e2) s s0 w
   end.
-
-
-Module CTSanity.
-Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds, 
-  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-  CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
-Hint Resolve ClassesOK.
-End CTSanity.
