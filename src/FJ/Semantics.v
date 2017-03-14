@@ -2,6 +2,7 @@ Require Import String.
 Require Import Relations Decidable.
 Require Import FJ.Base.
 Require Import FJ.Syntax.
+Require Import FJ.ClassTable.
 
 Reserved Notation "C '<:' D " (at level 40).
 Inductive Subtype : id -> ClassName -> Prop :=

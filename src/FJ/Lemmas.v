@@ -1,6 +1,7 @@
 Require Import Relation_Definitions.
 Require Import FJ.Base.
 Require Import FJ.Syntax.
+Require Import FJ.ClassTable.
 Require Import FJ.Semantics.
 
 Include FJ.Semantics.CTSanity.
