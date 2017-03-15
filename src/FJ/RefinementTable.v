@@ -6,8 +6,9 @@ Require Import FJ.ClassTable.
 (* A fixed Refinement Table*)
 Parameter RT: [ClassRefinement].
 
-Inductive succ (C: Class) (C': ClassRefinement): Prop :=
+Inductive succ (C: RefinementName) (C': RefinementName): Prop :=
   | S_Decl : forall C1 C2 D fs K noDupfs mds noDupMds ft fs' nodupfs' K' mds' noDupMds' mdrs noDupMdrs,
+    C = Cname @ BaseFeature ->
     C = CD (CDecl C1 D fs noDupfs K mds noDupMds) ->
     C' = CRefine C2 ft fs' nodupfs' K' mds' noDupMds' mdrs noDupMdrs ->
     find C1 RT = Some C' ->
@@ -18,6 +19,9 @@ Inductive succ (C: Class) (C': ClassRefinement): Prop :=
     find_where C1 (refs RT) = Some n ->
     find C1  (skipn n RT) = Some C' ->
     succ C C'.
+
+Reserved Notation "C <<: D" (at level 40).
+Indutive subrefinement (C: Class
 
 Fixpoint suc (C: ClassName) ft ct : option ClassRefinement :=
   match ct with

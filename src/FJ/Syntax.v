@@ -92,8 +92,9 @@ Instance CDeclRef : Referable ClassDecl :={
 
 (* The Name of a feature also encodes its order, taken from the "composition engine" *)
 Definition FeatureName := nat.
+Definition BaseFeature := 0.
 
-Inductive RefinementName :=
+Inductive RefinementName: Type :=
   | RName : id -> FeatureName -> RefinementName.
 
 Notation "C @ Feat" := (RName C Feat) (at level 30).
@@ -102,7 +103,8 @@ Inductive ClassRefinement :=
   (* CRefine is the name of the class
   , non duplicate fields,
   constructor and non duplicate methods *)
-  | CRefine: id -> FeatureName ->
+  | CRefine: forall C feat (RefineName: RefinementName), 
+    RefineName = C @ feat -> feat <> BaseFeature ->
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) ->
     forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
@@ -111,8 +113,13 @@ Inductive ClassRefinement :=
 Instance CRefinementRef : Referable ClassRefinement :={
   ref cdecl := 
     match cdecl with 
-   | (CRefine id _ _ _ _ _ _ _ _) => id end
+   | (CRefine (RName id _) _ _ _ _ _ _ _) => id end
 }.
+
+Definition feature (C: ClassRefinement): FeatureName:=
+  match C with
+  | (CRefine (RName _ f) _ _ _ _ _ _ _) => f
+  end.
 
 Inductive Class :=
   | CD : ClassDecl -> Class
