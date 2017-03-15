@@ -11,6 +11,12 @@ Inductive succ (C: Class) (C': ClassRefinement): Prop :=
     C = CD (CDecl C1 D fs noDupfs K mds noDupMds) ->
     C' = CRefine C2 ft fs' nodupfs' K' mds' noDupMds' mdrs noDupMdrs ->
     find C1 RT = Some C' ->
+    succ C C'
+  | S_Refine: forall C1 ft fs nodupfs K mds noDupMds mdrs noDupMdrs C2 ft' fs' nodupfs' K' mds' noDupMds' mdrs' noDupMdrs' n,
+    C = CR (CRefine C1 ft fs nodupfs K mds noDupMds mdrs noDupMdrs) ->
+    C' = CRefine C2 ft' fs' nodupfs' K' mds' noDupMds' mdrs' noDupMdrs' ->
+    find_where C1 (refs RT) = Some n ->
+    find C1  (skipn n RT) = Some C' ->
     succ C C'.
 
 Fixpoint suc (C: ClassName) ft ct : option ClassRefinement :=
