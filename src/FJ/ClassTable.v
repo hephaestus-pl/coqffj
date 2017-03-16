@@ -3,7 +3,6 @@ Require Import Relations Decidable.
 Require Import FJ.Base.
 Require Import FJ.Syntax.
 
-
 Reserved Notation "C '<:' D " (at level 40).
 Inductive Subtype : id -> ClassName -> Prop :=
   | S_Refl: forall C: ClassName, C <: C
@@ -22,13 +21,33 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
 
-Reserved Notation "C <<: D" (at level 40).
 Inductive Succ (C: Class) (C': Class): Prop :=
-  | Suc_Decl : forall n,
+  | C_Succ : forall n,
     find_where (ref C) (refs CT) = Some n ->
     find (ref C) (skipn (S n) CT) = Some C' ->
+    Succ C C'.
+
+Inductive Pred (C: Class) (C': Class): Prop :=
+  | C_Pred: 
+    Succ C' C ->
+    Pred C C'.
+
+Inductive Last (C: Class) (C': Class): Prop:=
+  | C_Last:
+    Succ C C' ->
+    (forall C'', ~Succ C' C'') ->
+    Last C C'.
+
+Reserved Notation "C <<: D" (at level 40).
+Inductive Refinement: Class -> Class -> Prop :=
+  | R_Succ : forall C C',
+    Succ C C' ->
     C <<: C'
-where "C <<: C'" := (Succ C C').
+  | R_Trans: forall C C' C'',
+    Succ C C' ->
+    Succ C' C'' ->
+    C <<: C''
+where "C <<: C'" := (Refinement C C').
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -77,18 +96,3 @@ Hint Constructors m_type m_body fields.
 Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "mbdy_ok" | Case_aux c "mbdy_no_override"].
-
-
-Fixpoint suc (C: ClassName) ft ct : option ClassRefinement :=
-  match ct with
-  | nil => None
-  | c :: cs => 
-   match c with 
-    | CD _ => suc C ft cs
-    | CR ((CRefine C' ft' _ _ _ _ _ _ _) as CRef) => 
-     match beq_id C C' with
-      | true => if lt_dec ft ft' then Some CRef else suc C ft cs
-      | false => suc C ft cs
-     end
-   end
-  end.
