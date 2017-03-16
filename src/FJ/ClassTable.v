@@ -22,25 +22,13 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
 
-
 Reserved Notation "C <<: D" (at level 40).
 Inductive Succ (C: Class) (C': Class): Prop :=
-  | Suc_Decl : forall C1 C2 D fs K noDupfs mds noDupMds fs' nodupfs' K' mds' noDupMds' mdrs noDupMdrs n,
-    C = CD (CDecl C1 D fs noDupfs K mds noDupMds) ->
-    C' = CR (CRefine C2 fs' nodupfs' K' mds' noDupMds' mdrs noDupMdrs) ->
-    find_where C1 (refs CT) = Some n ->
-    find C1 (skipn n CT) = Some C' ->
+  | Suc_Decl : forall n,
+    find_where (ref C) (refs CT) = Some n ->
+    find (ref C) (skipn (S n) CT) = Some C' ->
     C <<: C'
-  | Suc_Refine: forall C1 fs nodupfs K mds noDupMds mdrs noDupMdrs C2 fs' nodupfs' K' mds' noDupMds' mdrs' noDupMdrs' n,
-    C = CR (CRefine C1 fs nodupfs K mds noDupMds mdrs noDupMdrs) ->
-    C' = CR (CRefine C2 fs' nodupfs' K' mds' noDupMds' mdrs' noDupMdrs') ->
-    find_where C1 (refs CT) = Some n ->
-    find C1  (skipn n CT) = Some C' ->
-    C <<: C'
-where "C <<: C'" := (Succ C C') .
-
-Indutive subrefinement (C: Class
-
+where "C <<: C'" := (Succ C C').
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
