@@ -3,8 +3,11 @@ Require Import Relations Decidable.
 Require Import FJ.Base.
 Require Import FJ.Syntax.
 
+(* From our CT we can derive a subtype relation which is the reflexive
+  and transitive closure of the subclass relation.
+  i.e. A class relates with any of its superclass via the Subtype relation *)
 Reserved Notation "C '<:' D " (at level 40).
-Inductive Subtype : id -> ClassName -> Prop :=
+Inductive Subtype : ClassName -> ClassName -> Prop :=
   | S_Refl: forall C: ClassName, C <: C
   | S_Trans: forall (C D E: ClassName), 
     C <: D -> 
@@ -21,33 +24,65 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
 
-Inductive Succ (C: Class) (C': Class): Prop :=
-  | C_Succ : forall n,
-    find_where (ref C) (refs CT) = Some n ->
-    find (ref C) (skipn (S n) CT) = Some C' ->
+(* We can also fetch the next refinement in the refinement chain.
+   For this, we encode a feature by a number of zeros (n and m) on the right of a ClassName.
+   So if we have a refinement of the class C in the refinement 00 it will be encoded as
+   CRefine (C * 100) fDecls ...
+   Succ relates a Class with its nearest refinement, 
+   i.e., that have the smallest number of zeros.  
+   Is it possible to encode this smallest property any nicer?
+ *)
+Inductive Succ (C: ClassName) (C': ClassName): Prop :=
+  | C_Succ : forall fDecls noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines C'' fDecls' noDupfDecls' K' mDecls' noDupmDecls' mRefines' noDupmRefines' n m,    
+    find (C * 10 * m) CT = Some (CR (CRefine C'' fDecls' noDupfDecls' K' mDecls' noDupmDecls' mRefines' noDupmRefines')) ->
+    find (C * 10 * n) CT = Some (CR (CRefine C' fDecls noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+    n <= m ->
     Succ C C'.
 
-Inductive Pred (C: Class) (C': Class): Prop :=
+(* Pred is just the inverse of Succ *)
+Inductive Pred (C: ClassName) (C': ClassName): Prop :=
   | C_Pred: 
     Succ C' C ->
     Pred C C'.
 
-Inductive Last (C: Class) (C': Class): Prop:=
-  | C_Last:
-    Succ C C' ->
-    (forall C'', ~Succ C' C'') ->
-    Last C C'.
-
+(* Refinement is the transitive closure of Succ *)
 Reserved Notation "C <<: D" (at level 40).
-Inductive Refinement: Class -> Class -> Prop :=
-  | R_Succ : forall C C',
-    Succ C C' ->
-    C <<: C'
+Inductive Refinement: ClassName -> ClassName -> Prop :=
   | R_Trans: forall C C' C'',
     Succ C C' ->
     Succ C' C'' ->
     C <<: C''
+  | R_Succ : forall C C',
+    Succ C C' ->
+    C <<: C'
 where "C <<: C'" := (Refinement C C').
+
+(* Last is the most specific refinement *)
+Inductive Last (C: ClassName) (C': ClassName): Prop:=
+  | C_Last:
+    C <<: C' ->
+    (forall C'', ~Succ C' C'') ->
+    Last C C'.
+
+Inductive fields : ClassName -> [FieldDecl] -> Prop :=
+ | F_Obj : fields Object nil
+ | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs',
+     find C CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
+     Succ C S ->
+     fields S fsuc ->
+     fields D fs' ->
+     NoDup (refs (fs' ++ fs ++ fsuc)) ->
+     fields C (fs' ++ fs ++ fsuc)
+  | F_Refine: forall C S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+     find C CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+     Succ C S ->
+     fields S fsuc ->
+     NoDup (refs (fs ++ fsuc)) ->
+     fields C (fs ++ fsuc).
+Tactic Notation "fields_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "F_Obj" | Case_aux c "F_Decl"
+  | Case_aux c "F_Refine" ].
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -81,16 +116,6 @@ Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
               m_body m C xs e.
 Notation "'mbody(' m ',' D ')' '=' xs 'o' e" := (m_body m D xs e) (at level 40).
 
-Inductive fields : id -> [FieldDecl] -> Prop :=
- | F_Obj : fields Object nil
- | F_Decl : forall C D fs  noDupfs K mds noDupMds fs', 
-     find C CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
-     fields D fs' ->
-     NoDup (refs (fs' ++ fs)) ->
-     fields C (fs'++fs).
-Tactic Notation "fields_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "F_Obj" | Case_aux c "F_Decl"].
 
 Hint Constructors m_type m_body fields.
 Tactic Notation "mbdy_cases" tactic(first) ident(c) :=

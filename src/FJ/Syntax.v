@@ -104,7 +104,12 @@ Instance CDeclRef : Referable ClassDecl :={
    | CDecl id _ _ _ _ _ _ => id end
 }.
 
-(* The Name of a feature also encodes its order, taken from the "composition engine" *)
+(* The Name of a feature also encodes its order, taken from the "composition engine" 
+ * In the paper they forbid the simbol '@' for classnames, and use it to create the name of a refinement,
+ * which is className@featureName.
+ * Since our classnames here are nats, we will forbid classnames divisible by 10.
+ * This way a refinement of a class will be className * 10.
+*)
 Definition FeatureName := id.
 
 Inductive RefinementName: Type :=
