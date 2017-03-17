@@ -115,7 +115,7 @@ get (m extd x2 : v) x1 = get m x1.
 Proof.
   induction m; intros. simpl. rewrite not_eq_beq_id_false; auto.
   destruct a; simpl.
-  case beq_id eqn:Heq; case (beq_id x1 i) eqn:Heq1; auto.
+  case beq_id eqn:Heq; case (beq_id x1 x2) eqn:Heq1; auto.
 Qed.
 
 Lemma get_nHead: forall (A:Type) (m: env A) x' x a,
@@ -135,7 +135,7 @@ Proof.
   destruct a.
   intros.
   unfold Dom. simpl.
-  destruct beq_id_dec with x i. left; auto.
+  destruct beq_id_dec with x n. left; auto.
   right.
   apply IHm.
   rewrite get_nHead in H; auto.
