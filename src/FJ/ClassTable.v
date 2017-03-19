@@ -69,11 +69,16 @@ Inductive last (C: ClassReference) (C': ClassReference): Prop:=
     (forall C'', ~succ C' C'') ->
     last C C'.
 
+Inductive class_declaration : ClassReference -> Prop :=
+  | get_decl : forall C D fs noDupfs K mds noDupMds,
+     find (ref C) CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
+    class_declaration C.
+
 Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
  | F_Obj : forall feat, fields (Object @ feat) nil
- | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs' D' fsx noDupfs' K' mds' noDupMds',
+ | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs',
      find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
-     find (ref D) CT = Some (CD (CDecl D D' fsx noDupfs' K' mds' noDupMds')) ->
+     class_declaration D ->
      succ C S ->
      fields S fsuc ->
      fields D fs' ->
@@ -92,9 +97,9 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
 
 Inductive rfields : ClassReference -> [FieldDecl] -> Prop :=
  | RF_Obj : forall feat, rfields (Object @ feat) nil
- | RF_Decl : forall C D S fs noDupfs K mds noDupMds fs' D' fsx noDupfs' K' mds' noDupMds',
+ | RF_Decl : forall C D S fs noDupfs K mds noDupMds fs',
      find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
-     find (ref D) CT = Some (CD (CDecl D D' fsx noDupfs' K' mds' noDupMds')) ->
+     class_declaration D ->
      succ C S ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs)) ->
@@ -111,14 +116,15 @@ Tactic Notation "rfields_cases" tactic(first) ident(c) :=
   | Case_aux c "RF_Refine" ].
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
-Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
+Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
   | mty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
-              find C CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find (ref C) CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B
   | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
-              find C CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+              class_declaration D ->
               find m Ms = None ->
               mtype(m, D) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
