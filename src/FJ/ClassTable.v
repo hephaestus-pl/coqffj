@@ -30,58 +30,58 @@ Print Nat.divide.
    For this, we encode a feature by a number of zeros (n and m) on the right of a ClassName.
    So if we have a refinement of the class C in the refinement 00 it will be encoded as
    CRefine (C * 100) fDecls ...
-   Succ relates a Class with its nearest refinement, 
+   succ relates a Class with its nearest refinement, 
    i.e., that have the smallest number of zeros.  
    Is it possible to encode this smallest property any nicer?
  *)
-Inductive Succ (C: ClassReference) (C': ClassReference): Prop :=
-  | C_Succ : forall C'decl Cs feat feat' n,
+Inductive succ (C: ClassReference) (C': ClassReference): Prop :=
+  | C_succ : forall C'decl Cs feat feat' n,
     feat = feature C ->
     find_where feat RT = Some n ->
     nth_error RT (S n) = Some feat' ->
     Cs = get_feature feat' CT ->
     find (ref C) Cs = Some C'decl ->
     ref C'decl = ref C' ->
-    Succ C C'.
+    succ C C'.
 
-(* Pred is just the inverse of Succ *)
-Inductive Pred (C: ClassReference) (C': ClassReference): Prop :=
-  | C_Pred: 
-    Succ C' C ->
-    Pred C C'.
+(* pred is just the inverse of succ *)
+Inductive pred (C: ClassReference) (C': ClassReference): Prop :=
+  | C_pred: 
+    succ C' C ->
+    pred C C'.
 
-(* Refinement is the transitive closure of Succ *)
+(* Refinement is the transitive closure of succ *)
 Reserved Notation "C <<: D" (at level 40).
 Inductive Refinement: ClassReference -> ClassReference -> Prop :=
   | R_Trans: forall C C' C'',
-    Succ C C' ->
-    Succ C' C'' ->
+    succ C C' ->
+    succ C' C'' ->
     C <<: C''
-  | R_Succ : forall C C',
-    Succ C C' ->
+  | R_succ : forall C C',
+    succ C C' ->
     C <<: C'
 where "C <<: C'" := (Refinement C C').
 
 (* Last is the most specific refinement *)
-Inductive Last (C: ClassReference) (C': ClassReference): Prop:=
+Inductive last (C: ClassReference) (C': ClassReference): Prop:=
   | C_Last:
     C <<: C' ->
-    (forall C'', ~Succ C' C'') ->
-    Last C C'.
+    (forall C'', ~succ C' C'') ->
+    last C C'.
 
 Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
  | F_Obj : forall feat, fields (Object @ feat) nil
  | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs' D' fsx noDupfs' K' mds' noDupMds',
      find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
      find (ref D) CT = Some (CD (CDecl D D' fsx noDupfs' K' mds' noDupMds')) ->
-     Succ C S ->
+     succ C S ->
      fields S fsuc ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs ++ fsuc)) ->
      fields C (fs' ++ fs ++ fsuc)
   | F_Refine: forall C S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
      find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-     Succ C S ->
+     succ C S ->
      fields S fsuc ->
      NoDup (refs (fs ++ fsuc)) ->
      fields C (fs ++ fsuc).
@@ -89,6 +89,26 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"
   | Case_aux c "F_Refine" ].
+
+Inductive rfields : ClassReference -> [FieldDecl] -> Prop :=
+ | RF_Obj : forall feat, rfields (Object @ feat) nil
+ | RF_Decl : forall C D S fs noDupfs K mds noDupMds fs' D' fsx noDupfs' K' mds' noDupMds',
+     find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
+     find (ref D) CT = Some (CD (CDecl D D' fsx noDupfs' K' mds' noDupMds')) ->
+     succ C S ->
+     fields D fs' ->
+     NoDup (refs (fs' ++ fs)) ->
+     rfields C (fs' ++ fs)
+  | RF_Refine: forall C S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+     find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+     pred C S ->
+     fields S fpred ->
+     NoDup (refs (fpred ++ fs)) ->
+     rfields C (fpred ++ fs).
+Tactic Notation "rfields_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "RF_Obj" | Case_aux c "RF_Decl"
+  | Case_aux c "RF_Refine" ].
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
