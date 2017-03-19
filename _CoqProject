@@ -1,4 +1,4 @@
--R src FJ
+-R src FFJ
 
 src/Base.v
 src/Lists.v
@@ -6,12 +6,12 @@ src/Tactics.v
 src/Util/Environment.v
 src/Util/Id.v
 src/Util/Referable.v
-src/FJ/Lemmas.v
-src/FJ/Syntax.v
-src/FJ/ClassTable.v
-src/FJ/TypeSafety.v
-src/FJ/EvaluationContext.v
-src/FJ/Semantics.v
+src/FFJ/Lemmas.v
+src/FFJ/Syntax.v
+src/FFJ/ClassTable.v
+src/FFJ/TypeSafety.v
+src/FFJ/EvaluationContext.v
+src/FFJ/Semantics.v
 src/Lists/Forall2.v
 src/Lists/In.v
 src/Lists/Nth_error.v

@@ -1,6 +1,6 @@
-Require Export FJ.Tactics.LibTactics.
-Require Export FJ.Tactics.Crush.
-Require Export FJ.Tactics.Case.
+Require Export FFJ.Tactics.LibTactics.
+Require Export FFJ.Tactics.Crush.
+Require Export FFJ.Tactics.Case.
 Require Export Omega.
 
 

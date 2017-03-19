@@ -1,6 +1,6 @@
 Require Import String.
-Require Import FJ.Lists.
-Require Import FJ.Base.
+Require Import FFJ.Lists.
+Require Import FFJ.Base.
 (* This will be the notation to be similar with haskell *)
 Notation "'[' X ']'" := (list X) (at level 40).
 

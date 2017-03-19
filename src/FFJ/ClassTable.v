@@ -1,7 +1,7 @@
 Require Import String.
 Require Import Relations Decidable.
-Require Import FJ.Base.
-Require Import FJ.Syntax.
+Require Import FFJ.Base.
+Require Import FFJ.Syntax.
 
 (* From our CT we can derive a subtype relation which is the reflexive
   and transitive closure of the subclass relation.

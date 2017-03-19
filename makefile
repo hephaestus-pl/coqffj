@@ -50,11 +50,11 @@ vo_to_obj = $(addsuffix .o,\
 ##########################
 
 COQLIBS?=\
-  -R "src" FJ
+  -R "src" FFJ
 COQCHKLIBS?=\
-  -R "src" FJ
+  -R "src" FFJ
 COQDOCLIBS?=\
-  -R "src" FJ
+  -R "src" FFJ
 
 ##########################
 #                        #
@@ -102,12 +102,12 @@ VFILES:=src/Base.v\
   src/Util/Environment.v\
   src/Util/Id.v\
   src/Util/Referable.v\
-  src/FJ/Lemmas.v\
-  src/FJ/Syntax.v\
-  src/FJ/ClassTable.v\
-  src/FJ/TypeSafety.v\
-  src/FJ/EvaluationContext.v\
-  src/FJ/Semantics.v\
+  src/FFJ/Lemmas.v\
+  src/FFJ/Syntax.v\
+  src/FFJ/ClassTable.v\
+  src/FFJ/TypeSafety.v\
+  src/FFJ/EvaluationContext.v\
+  src/FFJ/Semantics.v\
   src/Lists/Forall2.v\
   src/Lists/In.v\
   src/Lists/Nth_error.v\
@@ -206,22 +206,22 @@ userinstall:
 
 install:
 	cd "src" && for i in $(NATIVEFILES1) $(GLOBFILES1) $(VFILES1) $(VOFILES1); do \
-	 install -d "`dirname "$(DSTROOT)"$(COQLIBINSTALL)/FJ/$$i`"; \
-	 install -m 0644 $$i "$(DSTROOT)"$(COQLIBINSTALL)/FJ/$$i; \
+	 install -d "`dirname "$(DSTROOT)"$(COQLIBINSTALL)/FFJ/$$i`"; \
+	 install -m 0644 $$i "$(DSTROOT)"$(COQLIBINSTALL)/FFJ/$$i; \
 	done
 
 install-doc:
-	install -d "$(DSTROOT)"$(COQDOCINSTALL)/FJ/html
+	install -d "$(DSTROOT)"$(COQDOCINSTALL)/FFJ/html
 	for i in html/*; do \
-	 install -m 0644 $$i "$(DSTROOT)"$(COQDOCINSTALL)/FJ/$$i;\
+	 install -m 0644 $$i "$(DSTROOT)"$(COQDOCINSTALL)/FFJ/$$i;\
 	done
 
 uninstall_me.sh: makefile
 	echo '#!/bin/sh' > $@
-	printf 'cd "$${DSTROOT}"$(COQLIBINSTALL)/FJ && rm -f $(NATIVEFILES1) $(GLOBFILES1) $(VFILES1) $(VOFILES1) && find . -type d -and -empty -delete\ncd "$${DSTROOT}"$(COQLIBINSTALL) && find "FJ" -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
-	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL)/FJ \\\n' >> "$@"
+	printf 'cd "$${DSTROOT}"$(COQLIBINSTALL)/FFJ && rm -f $(NATIVEFILES1) $(GLOBFILES1) $(VFILES1) $(VOFILES1) && find . -type d -and -empty -delete\ncd "$${DSTROOT}"$(COQLIBINSTALL) && find "FFJ" -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
+	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL)/FFJ \\\n' >> "$@"
 	printf '&& rm -f $(shell find "html" -maxdepth 1 -and -type f -print)\n' >> "$@"
-	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL) && find FJ/html -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
+	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL) && find FFJ/html -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
 	chmod +x $@
 
 uninstall: uninstall_me.sh

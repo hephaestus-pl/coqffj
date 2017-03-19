@@ -1,8 +1,8 @@
-Require Import FJ.Base.
-Require Import FJ.Syntax.
-Require Import FJ.ClassTable.
-Require Import FJ.Semantics.
-Require Import FJ.Lemmas.
+Require Import FFJ.Base.
+Require Import FFJ.Syntax.
+Require Import FFJ.ClassTable.
+Require Import FfJ.Semantics.
+Require Import FFJ.Lemmas.
 
 (* 
   The idea of Evaluation Contexts is to represent the next reduction to be applied.

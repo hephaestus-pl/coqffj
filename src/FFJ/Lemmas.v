@@ -1,10 +1,10 @@
 Require Import Relation_Definitions.
-Require Import FJ.Base.
-Require Import FJ.Syntax.
-Require Import FJ.ClassTable.
-Require Import FJ.Semantics.
+Require Import FFJ.Base.
+Require Import FFJ.Syntax.
+Require Import FFJ.ClassTable.
+Require Import FFJ.Semantics.
 
-Include FJ.Semantics.CTSanity.
+Include FFJ.Semantics.CTSanity.
 
 
 (* Auxiliary Lemmas *)

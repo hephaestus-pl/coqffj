@@ -1,6 +1,6 @@
-Require Export FJ.Lists.
-Require Export FJ.Util.Environment.
-Require Export FJ.Util.Id.
-Require Export FJ.Util.Referable.
-Require Export FJ.Tactics.
+Require Export FFJ.Lists.
+Require Export FFJ.Util.Environment.
+Require Export FFJ.Util.Id.
+Require Export FFJ.Util.Referable.
+Require Export FFJ.Tactics.
 Require Export Omega.
