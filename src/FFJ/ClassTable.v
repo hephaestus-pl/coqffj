@@ -114,6 +114,7 @@ Tactic Notation "rfields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "RF_Obj" | Case_aux c "RF_Decl"
   | Case_aux c "RF_Refine" ].
+          
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -122,10 +123,12 @@ Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : 
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B
-  | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
+  | mty_no_override: forall D C' Fs K Ms noDupfs noDupMds,
               find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
               class_declaration D ->
               find m Ms = None ->
+              succ C C' ->
+              (exists Bs' B', (mtype(m, C') = Bs' ~> B')) ->
               mtype(m, D) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
   where "'mtype(' m ',' D ')' '=' cs '~>' c0"
