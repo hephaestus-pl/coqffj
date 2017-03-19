@@ -45,14 +45,14 @@ Inductive Succ (C: ClassReference) (C': ClassReference): Prop :=
     Succ C C'.
 
 (* Pred is just the inverse of Succ *)
-Inductive Pred (C: ClassName) (C': ClassName): Prop :=
+Inductive Pred (C: ClassReference) (C': ClassReference): Prop :=
   | C_Pred: 
     Succ C' C ->
     Pred C C'.
 
 (* Refinement is the transitive closure of Succ *)
 Reserved Notation "C <<: D" (at level 40).
-Inductive Refinement: ClassName -> ClassName -> Prop :=
+Inductive Refinement: ClassReference -> ClassReference -> Prop :=
   | R_Trans: forall C C' C'',
     Succ C C' ->
     Succ C' C'' ->
@@ -63,7 +63,7 @@ Inductive Refinement: ClassName -> ClassName -> Prop :=
 where "C <<: C'" := (Refinement C C').
 
 (* Last is the most specific refinement *)
-Inductive Last (C: ClassName) (C': ClassName): Prop:=
+Inductive Last (C: ClassReference) (C': ClassReference): Prop:=
   | C_Last:
     C <<: C' ->
     (forall C'', ~Succ C' C'') ->
