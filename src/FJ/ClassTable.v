@@ -23,6 +23,19 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
+Print Nat.divide.
+
+
+Fixpoint Next_Refinement (C:ClassName): option ClassName :=
+  match CT with
+  | nil => None
+  | (x:: xs) =>
+    match x with
+    | CR (CRefine C' fDecls noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) =>
+      match 
+    | _ => Next_Refinement C xs
+    end
+  end.
 
 (* We can also fetch the next refinement in the refinement chain.
    For this, we encode a feature by a number of zeros (n and m) on the right of a ClassName.

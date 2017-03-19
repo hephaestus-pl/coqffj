@@ -91,18 +91,6 @@ Instance MRefineRef : Referable MethodRefinement :={
    | MRefine _ id _ _ _ => id end
 }.
 
-Inductive ClassDecl :=
-  (* CDecl is the name of the class, the superclass, non duplicate fields,
-  constructor and non duplicate methods *)
-  | CDecl: id -> ClassName -> 
-    forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> Constructor -> 
-    forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassDecl.
-
-Instance CDeclRef : Referable ClassDecl :={
-  ref cdecl := 
-    match cdecl with 
-   | CDecl id _ _ _ _ _ _ => id end
-}.
 
 (* The Name of a feature also encodes its order, taken from the "composition engine" 
  * In the paper they forbid the simbol '@' for classnames, and use it to create the name of a refinement,
@@ -112,16 +100,53 @@ Instance CDeclRef : Referable ClassDecl :={
 *)
 Definition FeatureName := id.
 
-Inductive RefinementName: Type :=
-  | RName : id -> FeatureName -> RefinementName.
+Inductive ClassReference: Type :=
+  | CRef : id -> FeatureName -> ClassReference.
 
-Notation "C @ Feat" := (RName C Feat) (at level 30).
+Notation "C @ Feat" := (CRef C Feat) (at level 30).
 
+Class Featurable (A: Set) :={
+  feature : A -> FeatureName;
+  get_all : FeatureName -> list A -> list A :=
+  let fix f (box: list A) (key: id) (l: list A) :=
+    match l with
+    | nil => box
+    | (x :: xs) => if beq_id key (feature x)
+                   then f (cons x box) key xs
+                   else f box key xs 
+    end in f nil
+}.
+
+Instance ClassDeclFeature: Referable ClassReference :={
+  ref C :=
+  match C with 
+   | (CRef i _) => i end
+}.
+
+Instance ClassReferenceFeature: Featurable ClassReference :={
+  feature C :=
+  match C with 
+   | (CRef _ f) => f end
+}.
+
+
+Inductive ClassDecl :=
+  (* CDecl is the name of the class, the superclass, non duplicate fields,
+  constructor and non duplicate methods *)
+  | CDecl: ClassReference -> ClassName -> 
+    forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> Constructor -> 
+    forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassDecl.
+
+Instance CDeclRef : Referable ClassDecl :={
+  ref cdecl := 
+    match cdecl with 
+   | CDecl cref _ _ _ _ _ _ => ref cref end
+}.
 Inductive ClassRefinement :=
   (* CRefine is the name of the class
   , non duplicate fields,
   constructor and non duplicate methods *)
-  | CRefine: id ->
+  | CRefine: ClassReference ->
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) ->
     forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
@@ -130,18 +155,18 @@ Inductive ClassRefinement :=
 Instance CRefinementRef : Referable ClassRefinement :={
   ref cdecl := 
     match cdecl with 
-   | (CRefine id _ _ _ _ _ _ _) => id end
+   | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
 }.
 
 Inductive Class :=
   | CD : ClassDecl -> Class
   | CR : ClassRefinement -> Class.
 
-Instance CRef : Referable Class :={
-  ref cdecl := 
-    match cdecl with 
-   | CD CDe => ref CDe
-   | CR CRefinement => ref CRefinement end
+Instance ClassRef : Referable Class :={
+  ref Cl := 
+    match Cl with 
+   | CD Cd => ref Cd
+   | CR Cr as Cref => ref Cr end
 }.
 
 Inductive Program :=
