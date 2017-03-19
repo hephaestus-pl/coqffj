@@ -69,15 +69,16 @@ Inductive Last (C: ClassReference) (C': ClassReference): Prop:=
     (forall C'', ~Succ C' C'') ->
     Last C C'.
 
-Inductive fields : ClassName -> [FieldDecl] -> Prop :=
- | F_Obj : fields Object nil
- | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs',
-     find C CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
+Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
+ | F_Obj : forall feat, fields (Object @ feat) nil
+ | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs' D' fsx noDupfs' K' mds' noDupMds',
+     find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
+     find (ref D) CT = Some (CD (CDecl D D' fsx noDupfs' K' mds' noDupMds')) ->
      Succ C S ->
      fields S fsuc ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs ++ fsuc)) ->
-     fields C (fs' ++ fs ++ fsuc)
+     fields C (fs' ++ fs ++ fsuc).
   | F_Refine: forall C S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
      find C CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
      Succ C S ->
