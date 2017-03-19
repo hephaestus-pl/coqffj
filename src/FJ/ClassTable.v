@@ -13,8 +13,9 @@ Inductive Subtype : ClassName -> ClassName -> Prop :=
     C <: D -> 
     D <: E -> 
     C <: E
-  | S_Decl: forall C D fs noDupfs K mds noDupMds,
-    find C CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds )) ->
+  | S_Decl: forall C cReference D fs noDupfs K mds noDupMds,
+    C = ref cReference ->
+    find C CT = Some (CD (CDecl cReference D fs noDupfs K mds noDupMds )) ->
     C <: D
 where "C '<:' D" := (Subtype C D).
 Hint Constructors Subtype.
@@ -25,18 +26,6 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   | Case_aux c "S_Decl"].
 Print Nat.divide.
 
-
-Fixpoint Next_Refinement (C:ClassName): option ClassName :=
-  match CT with
-  | nil => None
-  | (x:: xs) =>
-    match x with
-    | CR (CRefine C' fDecls noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) =>
-      match 
-    | _ => Next_Refinement C xs
-    end
-  end.
-
 (* We can also fetch the next refinement in the refinement chain.
    For this, we encode a feature by a number of zeros (n and m) on the right of a ClassName.
    So if we have a refinement of the class C in the refinement 00 it will be encoded as
@@ -45,11 +34,14 @@ Fixpoint Next_Refinement (C:ClassName): option ClassName :=
    i.e., that have the smallest number of zeros.  
    Is it possible to encode this smallest property any nicer?
  *)
-Inductive Succ (C: ClassName) (C': ClassName): Prop :=
-  | C_Succ : forall fDecls noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines C'' fDecls' noDupfDecls' K' mDecls' noDupmDecls' mRefines' noDupmRefines' n m,    
-    find (C * 10 * m) CT = Some (CR (CRefine C'' fDecls' noDupfDecls' K' mDecls' noDupmDecls' mRefines' noDupmRefines')) ->
-    find (C * 10 * n) CT = Some (CR (CRefine C' fDecls noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-    n <= m ->
+Inductive Succ (C: ClassReference) (C': ClassReference): Prop :=
+  | C_Succ : forall C'decl Cs feat feat' n,
+    feat = feature C ->
+    find_where feat RT = Some n ->
+    nth_error RT (S n) = Some feat' ->
+    Cs = get_feature feat' CT ->
+    find (ref C) Cs = Some C'decl ->
+    ref C'decl = ref C' ->
     Succ C C'.
 
 (* Pred is just the inverse of Succ *)

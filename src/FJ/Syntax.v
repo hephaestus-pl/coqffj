@@ -107,7 +107,7 @@ Notation "C @ Feat" := (CRef C Feat) (at level 30).
 
 Class Featurable (A: Set) :={
   feature : A -> FeatureName;
-  get_all : FeatureName -> list A -> list A :=
+  get_feature : FeatureName -> list A -> list A :=
   let fix f (box: list A) (key: id) (l: list A) :=
     match l with
     | nil => box
@@ -142,6 +142,11 @@ Instance CDeclRef : Referable ClassDecl :={
     match cdecl with 
    | CDecl cref _ _ _ _ _ _ => ref cref end
 }.
+Instance CDeclFeat : Featurable ClassDecl :={
+  feature cdecl := 
+    match cdecl with 
+   | CDecl cref _ _ _ _ _ _ => feature cref end
+}.
 Inductive ClassRefinement :=
   (* CRefine is the name of the class
   , non duplicate fields,
@@ -157,6 +162,11 @@ Instance CRefinementRef : Referable ClassRefinement :={
     match cdecl with 
    | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
 }.
+Instance CRefinementFeat : Featurable ClassRefinement :={
+  feature cdecl := 
+    match cdecl with 
+   | (CRefine Cref _ _ _ _ _ _ _) => feature Cref end
+}.
 
 Inductive Class :=
   | CD : ClassDecl -> Class
@@ -168,12 +178,18 @@ Instance ClassRef : Referable Class :={
    | CD Cd => ref Cd
    | CR Cr as Cref => ref Cr end
 }.
+Instance ClassFeat : Featurable Class :={
+  feature Cl := 
+    match Cl with 
+   | CD Cd => feature Cd
+   | CR Cr as Cref => feature Cr end
+}.
 
 Inductive Program :=
   | CProgram : forall (cDecls: [Class]), NoDup (refs cDecls) -> Exp -> Program.
 
-(* We assume a fixed CT *)
+(* We assume a fixed Class Table *)
 Parameter CT: [Class].
 
-(* And a mapping to retrieve the FeatureName, given by the composition engine *)
-Parameter RT: ClassRefinement -> FeatureName.
+(* The Refinement Table gives us the order in wich features will be applied  *)
+Parameter RT: [FeatureName].
