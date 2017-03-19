@@ -108,7 +108,7 @@ Notation "C @ Feat" := (CRef C Feat) (at level 30).
 Class Featurable (A: Set) :={
   feature : A -> FeatureName;
   get_feature : FeatureName -> list A -> list A := 
-  fun (key: id) (l: list A) => filter (fun x => beq_id key (feature x)) l
+  fun key l => filter (fun x => beq_id key (feature x)) l
 }.
 
 Instance ClassDeclFeature: Referable ClassReference :={
