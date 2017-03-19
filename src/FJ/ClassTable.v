@@ -78,9 +78,9 @@ Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
      fields S fsuc ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs ++ fsuc)) ->
-     fields C (fs' ++ fs ++ fsuc).
+     fields C (fs' ++ fs ++ fsuc)
   | F_Refine: forall C S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-     find C CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+     find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
      Succ C S ->
      fields S fsuc ->
      NoDup (refs (fs ++ fsuc)) ->
