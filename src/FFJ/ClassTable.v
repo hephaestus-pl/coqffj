@@ -114,7 +114,22 @@ Tactic Notation "rfields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "RF_Obj" | Case_aux c "RF_Decl"
   | Case_aux c "RF_Refine" ].
-          
+
+Inductive method_in_succs (m: id) (C: ClassReference) : Prop :=
+  | M_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
+              succ C S ->
+              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
+              method_in_succs m C
+  | M_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+              succ C S ->
+              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find m mDecls = None ->
+              succ S SS ->
+              method_in_succs m SS ->
+              method_in_succs m C.
+              
+              
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -123,20 +138,27 @@ Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : 
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B
-  | mty_no_override: forall D C' Fs K Ms noDupfs noDupMds,
+  | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
               find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
               class_declaration D ->
               find m Ms = None ->
-              succ C C' ->
-              (exists Bs' B', (mtype(m, C') = Bs' ~> B')) ->
+              ~ method_in_succs m C ->
               mtype(m, D) = Bs ~> B ->
+              mtype(m, C) = Bs ~> B
+  | mty_no_override_no_succ: forall D S Fs K Ms noDupfs noDupMds,
+              find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+              class_declaration D ->
+              find m Ms = None ->
+              succ C S ->
+              mtype(m, S) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
   where "'mtype(' m ',' D ')' '=' cs '~>' c0"
         := (m_type m D cs c0).
 
 Tactic Notation "mtype_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "mty_ok" | Case_aux c "mty_no_override"].
+  [ Case_aux c "mty_ok" | Case_aux c "mty_no_override"
+  | Case_aux c "mty_no_override_no_succ"].
 
 Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
   | mbdy_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
