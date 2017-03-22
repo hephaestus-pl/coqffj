@@ -31,15 +31,15 @@ Inductive ExpTyping (Gamma: env ClassName) : Exp -> ClassName -> Prop :=
   | T_Var : forall x C, get Gamma x = Some C -> 
                 Gamma |-- ExpVar x : C
   | T_Field: forall e0 C0 fs i Fi Ci fi,
-                Gamma |-- e0 : C0 ->
+                Gamma |-- e0 : (ref C0) ->
                 fields C0 fs ->
                 nth_error fs i = Some Fi ->
                 Ci = fieldType Fi ->
                 fi = ref Fi ->
                 Gamma |-- ExpFieldAccess e0 fi : Ci
-  | T_Invk : forall e0 C Cs C0 Ds m es,
-                Gamma |-- e0 : C0 ->
-                mtype(m, C0) = Ds ~> C ->
+  | T_Invk : forall e0 C Cs C0Ref C0 Ds m es,
+                Gamma |-- e0 : (ref C0) ->
+                mtype(m, C0Ref) = Ds ~> C ->
                 Forall2 (ExpTyping Gamma) es Cs ->
                 Forall2 Subtype Cs Ds ->
                 Gamma |-- ExpMethodInvoc e0 m es : C
@@ -48,7 +48,7 @@ Inductive ExpTyping (Gamma: env ClassName) : Exp -> ClassName -> Prop :=
                 Ds = map fieldType fs ->
                 Forall2 (ExpTyping Gamma) es Cs ->
                 Forall2 Subtype Cs Ds ->
-                Gamma |-- ExpNew C es : C
+                Gamma |-- ExpNew (ref C) es : (ref C)
   | T_UCast : forall e0 D C,
                 Gamma |-- e0 : D ->
                 D <: C ->
