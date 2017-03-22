@@ -115,20 +115,36 @@ Tactic Notation "rfields_cases" tactic(first) ident(c) :=
   [ Case_aux c "RF_Obj" | Case_aux c "RF_Decl"
   | Case_aux c "RF_Refine" ].
 
-Inductive method_in_succs (m: id) (C: ClassReference) : Prop :=
-  | M_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
+Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=
+  | MD_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
               succ C S ->
               find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
-              method_in_succs m C
-  | M_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+              methodDecl_in_succs m C
+  | MD_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               succ C S ->
               find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m mDecls = None ->
               succ S SS ->
-              method_in_succs m SS ->
-              method_in_succs m C.
+              methodDecl_in_succs m SS ->
+              methodDecl_in_succs m C.
 
+
+Inductive methodRefine_in_succs (m: id) (C: ClassReference) : Prop :=
+  | MR_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
+              succ C S ->
+              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
+              methodRefine_in_succs m C
+  | MR_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+              succ C S ->
+              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find m mRefines = None ->
+              succ S SS ->
+              methodRefine_in_succs m SS ->
+              methodRefine_in_succs m C.
+
+Definition method_in_succs (m: id) (C: ClassReference)  := methodDecl_in_succs m C /\ methodRefine_in_succs m C.
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -141,7 +157,7 @@ Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : 
               find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
               class_declaration D ->
               find m Ms = None ->
-              ~ method_in_succs m C ->
+              ~ methodDecl_in_succs m C ->
               mtype(m, D) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
   | mty_no_override_no_succ: forall D S Fs K Ms noDupfs noDupMds,
@@ -195,24 +211,51 @@ Inductive rm_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) :
 
 Tactic Notation "mtype_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "rmty_ok"                  | Case_aux c "rmty_refine"
+  [ Case_aux c "rmty_ok" | Case_aux c "rmty_refine"
   | Case_aux c "rmty_no_extd" ].
 
-Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
+Reserved Notation "'mbody(' m ',' D ')' '=' xs 'o' e" (at level 40, xs at next level).
+Inductive m_body (m: id) (C: ClassReference) (xs: [ClassName]) (e: Exp) : Prop:=
   | mbdy_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
-              find C CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find (ref C) CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
               find m Ms = Some (MDecl C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
-              m_body m C xs e
+              ~ method_in_succs m C ->
+              mbody(m, C) = xs o e
   | mbdy_no_override: forall D Fs K Ms noDupfs noDupMds,
-              find C CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+              class_declaration D ->
               find m Ms = None ->
-              m_body m D xs e ->
-              m_body m C xs e.
-Notation "'mbody(' m ',' D ')' '=' xs 'o' e" := (m_body m D xs e) (at level 40).
+              ~ method_in_succs m C ->
+              mbody(m, D) = xs o e ->
+              mbody(m, C) = xs o e
+  | mbdy_succ : forall S,
+              succ C S ->
+              mbody(m, S) = xs o e ->
+              mbody(m, C) = xs o e
+  | mbdy_refine_mdecl : forall Fs noDupfs Kr MDs noDupMds MRs noDupMrs C0 fargs noDupfargs,
+              find (ref C) CT = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
+              ~ method_in_succs m C ->
+              find m MDs = Some (MDecl C0 m fargs noDupfargs e) ->
+              refs fargs = xs ->
+              mbody(m, C) = xs o e
+  | mbdy_refine_mref : forall Fs noDupfs Kr MDs noDupMds MRs noDupMrs C0 fargs noDupfargs,
+              find (ref C) CT = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
+              ~ method_in_succs m C ->
+              find m MRs = Some (MRefine C0 m fargs noDupfargs e) ->
+              refs fargs = xs ->
+              mbody(m, C) = xs o e
+  | mbdy_refine_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              succ C S ->
+              mbody(m, S) = xs o e ->
+              mbody(m, C) = xs o e
+  where "'mbody(' m ',' D ')' '=' xs 'o' e" := (m_body m D xs e).
 
-
-Hint Constructors m_type m_body fields.
 Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "mbdy_ok" | Case_aux c "mbdy_no_override"].
+  [ Case_aux c "mbdy_ok" | Case_aux c "mbdy_no_override"
+  | Case_aux c "mbdy_succ" | Case_aux c "mbdy_refine_mdecl"
+  | Case_aux c "mbdy_refine_mref" | Case_aux c "mbdy_refine_succ"].
+
+Hint Constructors m_type m_body fields.
