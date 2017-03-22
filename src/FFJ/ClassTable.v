@@ -259,3 +259,20 @@ Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
   | Case_aux c "mbdy_refine_mref" | Case_aux c "mbdy_refine_succ"].
 
 Hint Constructors m_type m_body fields.
+
+Inductive override (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
+  | C_override : forall Ds D0,
+    (mtype(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+    override m D Cs C0.
+
+(* Should I do this one in terms of method_in_succ also? *)
+Inductive introduce (m: id) (C: ClassReference): Prop :=
+  | C_introduce : forall S,
+    succ C S ->
+    (forall Ds D0, ~ mtype(m, S) = Ds ~> D0) ->
+    introduce m C.
+
+Inductive extend (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
+  | C_extend : forall Ds D0,
+    (rmtype(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+    extend m D Cs C0.
