@@ -1,8 +1,8 @@
 Require Import String.
 Require Import Relations Decidable.
-Require Import FJ.Base.
-Require Import FJ.Syntax.
-Require Import FJ.ClassTable.
+Require Import FFJ.Base.
+Require Import FFJ.Syntax.
+Require Import FFJ.ClassTable.
 
 Fixpoint subst (e: Exp) (ds: [Exp]) (xs: [Var]): Exp := 
   match e with
