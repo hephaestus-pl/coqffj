@@ -152,6 +152,7 @@ Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
             E0 <: C0 ->
             find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
             override m D Cs C0 ->
+            introduce m C ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0).
