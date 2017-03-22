@@ -171,6 +171,33 @@ Tactic Notation "mtype_cases" tactic(first) ident(c) :=
   | Case_aux c "mty_no_override_no_succ" | Case_aux c "mty_refine"
   | Case_aux c "mty_succ" ].
 
+
+Reserved Notation "'rmtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
+Inductive rm_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
+  | rmty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
+              find (ref C) CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find m Ms = Some (MDecl B m fargs noDupfargs e) ->
+              map fargType fargs = Bs ->
+              rmtype(m, C) = Bs ~> B
+  | rmty_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms fargs noDupfargs e,
+              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find m Ms = Some (MDecl B m fargs noDupfargs e) ->
+              map fargType fargs = Bs ->
+              rmtype(m, C) = Bs ~> B
+  | rmty_no_extd: forall P fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms,
+              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find m Ms = None ->
+              pred C P ->
+              rmtype(m, P) = Bs ~> B ->
+              rmtype(m, C) = Bs ~> B
+  where "'rmtype(' m ',' D ')' '=' cs '~>' c0"
+        := (rm_type m D cs c0).
+
+Tactic Notation "mtype_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "rmty_ok"                  | Case_aux c "rmty_refine"
+  | Case_aux c "rmty_no_extd" ].
+
 Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
   | mbdy_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
               find C CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
