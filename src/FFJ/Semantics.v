@@ -79,12 +79,12 @@ Inductive Computation_step : Exp -> Exp -> Prop :=
             fields C Fs ->
             nth_error Fs i = Some fi ->
             nth_error es i = Some ei-> 
-            ExpFieldAccess (ExpNew C es) (ref fi) ~>! ei
+            ExpFieldAccess (ExpNew (ref C) es) (ref fi) ~>! ei
   | R_Invk : forall C m xs ds es e0,
             mbody(m, C) = xs o e0 ->
             NoDup (this :: xs) ->
             List.length ds = List.length xs ->
-            ExpMethodInvoc (ExpNew C es) m ds ~>! [; ExpNew C es :: ds \ this :: xs;] e0
+            ExpMethodInvoc (ExpNew (ref C) es) m ds ~>! [; ExpNew (ref C) es :: ds \ this :: xs;] e0
   | R_Cast : forall C D es,
             C <: D ->
             ExpCast D (ExpNew C es) ~>! ExpNew C es
