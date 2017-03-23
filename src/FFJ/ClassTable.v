@@ -13,10 +13,9 @@ Inductive Subtype : ClassName -> ClassName -> Prop :=
     C <: D -> 
     D <: E -> 
     C <: E
-  | S_Decl: forall C cReference D fs noDupfs K mds noDupMds,
-    C = ref cReference ->
-    find C CT = Some (CD (CDecl cReference D fs noDupfs K mds noDupMds )) ->
-    C <: D
+  | S_Decl: forall C D fs noDupfs K mds noDupMds,
+    find_class C = Some (CD (CDecl C D fs noDupfs K mds noDupMds )) ->
+    (ref C) <: D
 where "C '<:' D" := (Subtype C D).
 Hint Constructors Subtype.
 
@@ -35,12 +34,11 @@ Print Nat.divide.
    Is it possible to encode this smallest property any nicer?
  *)
 Inductive succ (C: ClassReference) (C': ClassReference): Prop :=
-  | C_succ : forall C'decl Cs feat feat' n,
+  | C_succ : forall C'decl feat feat' n,
     feat = feature C ->
     find_where feat RT = Some n ->
     nth_error RT (S n) = Some feat' ->
-    Cs = get_feature feat' CT ->
-    find (ref C) Cs = Some C'decl ->
+    find_class (CRef (ref C) feat') = Some C'decl ->
     ref C'decl = ref C' ->
     succ C C'.
 
@@ -71,13 +69,13 @@ Inductive last (C: ClassReference) (C': ClassReference): Prop:=
 
 Inductive class_declaration : ClassReference -> Prop :=
   | get_decl : forall C D fs noDupfs K mds noDupMds,
-     find (ref C) CT = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
+     find_class C = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
     class_declaration C.
 
 Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
  | F_Obj : forall feat, fields (Object @ feat) nil
  | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs',
-     find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
+     find_class C = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
      class_declaration D ->
      succ C S ->
      fields S fsuc ->
@@ -85,7 +83,7 @@ Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
      NoDup (refs (fs' ++ fs ++ fsuc)) ->
      fields C (fs' ++ fs ++ fsuc)
   | F_Refine: forall C S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-     find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+     find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
      succ C S ->
      fields S fsuc ->
      NoDup (refs (fs ++ fsuc)) ->
@@ -98,14 +96,14 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
 Inductive rfields : ClassReference -> [FieldDecl] -> Prop :=
  | RF_Obj : forall feat, rfields (Object @ feat) nil
  | RF_Decl : forall C D S fs noDupfs K mds noDupMds fs',
-     find (ref C) CT = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
+     find_class C = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
      class_declaration D ->
      succ C S ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs)) ->
      rfields C (fs' ++ fs)
   | RF_Refine: forall C S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-     find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+     find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
      pred C S ->
      fields S fpred ->
      NoDup (refs (fpred ++ fs)) ->
@@ -118,12 +116,12 @@ Tactic Notation "rfields_cases" tactic(first) ident(c) :=
 Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=
   | MD_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
               succ C S ->
-              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class S = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               methodDecl_in_succs m C
   | MD_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               succ C S ->
-              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class S = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m mDecls = None ->
               succ S SS ->
               methodDecl_in_succs m SS ->
@@ -133,12 +131,12 @@ Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=
 Inductive methodRefine_in_succs (m: id) (C: ClassReference) : Prop :=
   | MR_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
               succ C S ->
-              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class S = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
               methodRefine_in_succs m C
   | MR_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               succ C S ->
-              find (ref S) CT = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class S = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m mRefines = None ->
               succ S SS ->
               methodRefine_in_succs m SS ->
@@ -149,31 +147,31 @@ Definition method_in_succs (m: id) (C: ClassReference)  := methodDecl_in_succs m
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
   | mty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
-              find (ref C) CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B
   | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
-              find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+              find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
               class_declaration D ->
               find m Ms = None ->
               ~ methodDecl_in_succs m C ->
               mtype(m, D) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
   | mty_no_override_no_succ: forall D S Fs K Ms noDupfs noDupMds,
-              find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+              find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
               class_declaration D ->
               find m Ms = None ->
               succ C S ->
               mtype(m, S) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
   | mty_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms fargs noDupfargs e,
-              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B
   | mty_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms,
-              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m Ms = None ->
               succ C S ->
               mtype(m, S) = Bs ~> B ->
@@ -191,17 +189,17 @@ Tactic Notation "mtype_cases" tactic(first) ident(c) :=
 Reserved Notation "'rmtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive rm_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
   | rmty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
-              find (ref C) CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               rmtype(m, C) = Bs ~> B
   | rmty_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms fargs noDupfargs e,
-              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               rmtype(m, C) = Bs ~> B
   | rmty_no_extd: forall P fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms,
-              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               find m Ms = None ->
               pred C P ->
               rmtype(m, P) = Bs ~> B ->
@@ -217,13 +215,13 @@ Tactic Notation "mtype_cases" tactic(first) ident(c) :=
 Reserved Notation "'mbody(' m ',' D ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive m_body (m: id) (C: ClassReference) (xs: [ClassName]) (e: Exp) : Prop:=
   | mbdy_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
-              find (ref C) CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
               find m Ms = Some (MDecl C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
               ~ method_in_succs m C ->
               mbody(m, C) = xs o e
   | mbdy_no_override: forall D Fs K Ms noDupfs noDupMds,
-              find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+              find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
               class_declaration D ->
               find m Ms = None ->
               ~ method_in_succs m C ->
@@ -234,19 +232,19 @@ Inductive m_body (m: id) (C: ClassReference) (xs: [ClassName]) (e: Exp) : Prop:=
               mbody(m, S) = xs o e ->
               mbody(m, C) = xs o e
   | mbdy_refine_mdecl : forall Fs noDupfs Kr MDs noDupMds MRs noDupMrs C0 fargs noDupfargs,
-              find (ref C) CT = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
+              find_class C = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
               ~ method_in_succs m C ->
               find m MDs = Some (MDecl C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody(m, C) = xs o e
   | mbdy_refine_mref : forall Fs noDupfs Kr MDs noDupMds MRs noDupMrs C0 fargs noDupfargs,
-              find (ref C) CT = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
+              find_class C = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
               ~ method_in_succs m C ->
               find m MRs = Some (MRefine C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody(m, C) = xs o e
   | mbdy_refine_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find (ref C) CT = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
+              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
               succ C S ->
               mbody(m, S) = xs o e ->
               mbody(m, C) = xs o e

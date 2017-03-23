@@ -179,6 +179,7 @@ Instance ClassFeat : Featurable Class :={
    | CR Cr as Cref => feature Cr end
 }.
 
+
 Inductive Program :=
   | CProgram : forall (cDecls: [Class]), NoDup (refs cDecls) -> Exp -> Program.
 
@@ -187,3 +188,8 @@ Parameter CT: [Class].
 
 (* The Refinement Table gives us the order in wich features will be applied  *)
 Parameter RT: [FeatureName].
+
+
+Definition find_class (C: ClassReference) :=
+  let FT := get_feature (feature C) CT in
+  find (ref C) FT.

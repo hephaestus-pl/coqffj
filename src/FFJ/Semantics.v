@@ -150,16 +150,16 @@ Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
   | T_MDecl : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
             nil extds (this :: xs) : ((ref C) :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
-            find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+            find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
             override m D Cs C0 ->
             introduce m C ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0)
-  | T_CRefine : forall R C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
-            nil extds (this :: xs) : (R :: Cs) |-- e0 : E0 ->
+  | T_CRefine : forall C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
+            nil extds (this :: xs) : ((ref C) :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
-            find R CT = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
+            find_class C = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
             introduce m C ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
@@ -168,9 +168,9 @@ Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
 
 Inductive MRefine_OK : ClassReference -> MethodRefinement -> Prop :=
   | T_MRefine : forall R C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
-            nil extds (this :: xs) : (R :: Cs) |-- e0 : E0 ->
+            nil extds (this :: xs) : ((ref C) :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
-            find R CT = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
+            find_class R = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
             find m Mrs = None->
             extend m C Cs C0 ->
             map fargType fargs = Cs ->
@@ -178,13 +178,28 @@ Inductive MRefine_OK : ClassReference -> MethodRefinement -> Prop :=
             MRefine_OK C (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
-  | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
-            K = KDecl (ref C) (Cfargs ++ Dfargs) (map Arg (refs Cfargs)) (zipWith Assgnmt (map (ExpFieldAccess (ExpVar this)) (refs Fs)) (map ExpVar (refs Fs))) ->
+  | T_Class : forall C D Fs noDupfs K Ms noDupMds fdecl,
             fields D fdecl ->
             NoDup (refs (fdecl ++ Fs)) ->
             Forall (MType_OK C) (Ms) ->
-            find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+            find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
             CType_OK (CDecl C (ref D) Fs noDupfs K Ms noDupMds).
+
+Inductive CRefine_OK: ClassRefinement -> Prop :=
+  | T_Refine : forall P R C D Fs noDupfs Kr Ms noDupMds Cfargs Dfargs fdecl Mrs noDupMrs D' Fs' noDupfs' K' Ms' noDupMds',
+            find_class R = Some (CR (CRefine R (ref D) Fs noDupfs Kr Ms noDupMds Mrs noDupMrs)) ->
+            pred R P ->
+            rfieds P Pfields ->
+            NoDup (refs (Pfields ++ Fs)) ->
+            Forall (MType_OK R) Ms ->
+            Forall (MRefine_OK R) Mrs ->
+            R <<: C ->
+            find (ref C) CT = Some (CD (CDecl C (ref D') Fs' noDupfs' K' Ms' noDupMds')) ->
+            
+            
+            
+            
+            
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
