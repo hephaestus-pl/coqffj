@@ -147,11 +147,19 @@ Definition normal_form {X:Type} (R: relation X) (t: X) :=
 
 
 Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
-  | T_Method : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
+  | T_MDecl : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
             nil extds (this :: xs) : ((ref C) :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
             override m D Cs C0 ->
+            introduce m C ->
+            map fargType fargs = Cs ->
+            refs fargs = xs ->
+            MType_OK C (MDecl C0 m fargs noDupFargs e0).
+  | T_MRefine : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
+            nil extds (this :: xs) : ((ref C) :: Cs) |-- e0 : E0 ->
+            E0 <: C0 ->
+            find (ref C) CT = Some (CR (CRefine C (ref D) Fs noDupfs K Ms noDupMds)) ->
             introduce m C ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
