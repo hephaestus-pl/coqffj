@@ -72,6 +72,8 @@ Inductive class_declaration : ClassReference -> Prop :=
      find_class C = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
     class_declaration C.
 
+Hint Constructors succ Refinement last class_declaration.
+
 Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
  | F_Obj : forall feat, fields (Object @ feat) nil
  | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs',
@@ -256,7 +258,7 @@ Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
   | Case_aux c "mbdy_succ" | Case_aux c "mbdy_refine_mdecl"
   | Case_aux c "mbdy_refine_mref" | Case_aux c "mbdy_refine_succ"].
 
-Hint Constructors m_type m_body fields.
+Hint Constructors methodDecl_in_succs m_type m_body fields rfields.
 
 Inductive override (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
   | C_override : forall Ds D0,
@@ -276,3 +278,28 @@ Inductive extend (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): 
   | C_extend : forall Ds D0,
     (rmtype(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
     extend m D Cs C0.
+
+Lemma find_class_same_ref: forall C CDecl,
+  find_class C = Some CDecl ->
+  ref C = ref CDecl.
+Proof.
+  intros. unfold find_class in H. apply find_ref_inv in H. auto.
+Qed.
+
+Lemma succ_same_ref : forall R C,
+  succ R C ->
+  ref R = ref C.
+Proof.
+  induction 1. 
+  apply find_class_same_ref in H2; crush.
+Qed.
+
+Lemma refinement_same_ref : forall R C,
+  R <<: C ->
+  ref R = ref C.
+Proof.
+  intros. induction H.
+  rewrite succ_same_ref with C C'; eauto.
+  rewrite succ_same_ref with C' C''; eauto.
+  rewrite succ_same_ref with C C'; eauto.
+Qed.
