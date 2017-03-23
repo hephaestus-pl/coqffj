@@ -156,7 +156,7 @@ Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
             map fargType fargs = Cs ->
             refs fargs = xs ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0)
-  | T_MRefine : forall R C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
+  | T_CRefine : forall R C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
             nil extds (this :: xs) : (R :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             find R CT = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
@@ -165,14 +165,26 @@ Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
             refs fargs = xs ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0).
 
+
+Inductive MRefine_OK : ClassReference -> MethodRefinement -> Prop :=
+  | T_MRefine : forall R C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
+            nil extds (this :: xs) : (R :: Cs) |-- e0 : E0 ->
+            E0 <: C0 ->
+            find R CT = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
+            find m Mrs = None->
+            extend m C Cs C0 ->
+            map fargType fargs = Cs ->
+            refs fargs = xs ->
+            MRefine_OK C (MRefine C0 m fargs noDupFargs e0).
+
 Inductive CType_OK: ClassDecl -> Prop :=
   | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
-            K = KDecl C (Cfargs ++ Dfargs) (map Arg (refs Cfargs)) (zipWith Assgnmt (map (ExpFieldAccess (ExpVar this)) (refs Fs)) (map ExpVar (refs Fs))) ->
+            K = KDecl (ref C) (Cfargs ++ Dfargs) (map Arg (refs Cfargs)) (zipWith Assgnmt (map (ExpFieldAccess (ExpVar this)) (refs Fs)) (map ExpVar (refs Fs))) ->
             fields D fdecl ->
             NoDup (refs (fdecl ++ Fs)) ->
             Forall (MType_OK C) (Ms) ->
-            find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-            CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
+            find (ref C) CT = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
+            CType_OK (CDecl C (ref D) Fs noDupfs K Ms noDupMds).
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
