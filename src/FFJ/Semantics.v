@@ -186,20 +186,16 @@ Inductive CType_OK: ClassDecl -> Prop :=
             CType_OK (CDecl C (ref D) Fs noDupfs K Ms noDupMds).
 
 Inductive CRefine_OK: ClassRefinement -> Prop :=
-  | T_Refine : forall P R C D Fs noDupfs Kr Ms noDupMds Cfargs Dfargs fdecl Mrs noDupMrs D' Fs' noDupfs' K' Ms' noDupMds',
-            find_class R = Some (CR (CRefine R (ref D) Fs noDupfs Kr Ms noDupMds Mrs noDupMrs)) ->
+  | T_Refine : forall P R C Pfields Fs noDupfs Kr Ms noDupMds Mrs noDupMrs D' Fs' noDupfs' K' Ms' noDupMds',
+            find_class R = Some (CR (CRefine R Fs noDupfs Kr Ms noDupMds Mrs noDupMrs)) ->
             pred R P ->
-            rfieds P Pfields ->
+            rfields P Pfields ->
             NoDup (refs (Pfields ++ Fs)) ->
             Forall (MType_OK R) Ms ->
             Forall (MRefine_OK R) Mrs ->
             R <<: C ->
-            find (ref C) CT = Some (CD (CDecl C (ref D') Fs' noDupfs' K' Ms' noDupMds')) ->
-            
-            
-            
-            
-            
+            find_class C = Some (CD (CDecl C D' Fs' noDupfs' K' Ms' noDupMds')) ->
+            CRefine_OK (CRefine R Fs noDupfs Kr Ms noDupMds Mrs noDupMrs).
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
