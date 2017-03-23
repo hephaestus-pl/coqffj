@@ -265,7 +265,9 @@ Inductive override (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName)
     (mtype(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
     override m D Cs C0.
 
-(* Should I do this one in terms of method_in_succ also? *)
+(* Should I do this one in terms of method_in_succ also? 
+  I really think it should be pred here 
+*)
 Inductive introduce (m: id) (C: ClassReference): Prop :=
   | C_introduce : forall S,
     succ C S ->
