@@ -155,11 +155,11 @@ Inductive MType_OK : ClassReference -> MethodDecl -> Prop :=
             introduce m C ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
-            MType_OK C (MDecl C0 m fargs noDupFargs e0).
-  | T_MRefine : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
-            nil extds (this :: xs) : ((ref C) :: Cs) |-- e0 : E0 ->
+            MType_OK C (MDecl C0 m fargs noDupFargs e0)
+  | T_MRefine : forall R C C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs Mrs noDupMrs,
+            nil extds (this :: xs) : (R :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
-            find (ref C) CT = Some (CR (CRefine C (ref D) Fs noDupfs K Ms noDupMds)) ->
+            find R CT = Some (CR (CRefine C Fs noDupfs K Ms noDupMds Mrs noDupMrs)) ->
             introduce m C ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
