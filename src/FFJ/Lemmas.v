@@ -11,7 +11,7 @@ Include FFJ.Semantics.CTSanity.
 (* mtype / MType_OK lemmas *)
 Lemma unify_returnType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
   mtype( m, C)= Ds ~> D ->
-  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  find_class C = Some (CD (CDecl C D0 Fs noDupfs K Ms noDupMds)) ->
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
   D = C0.
 Proof.
@@ -20,7 +20,7 @@ Qed.
 
 Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
   mtype( m, C)= Ds ~> D ->
-  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  find_class C = Some (CD (CDecl C D0 Fs noDupfs K Ms noDupMds)) ->
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
   Ds = map fargType fargs.
 Proof.
@@ -29,7 +29,7 @@ Qed.
 
 Lemma methodDecl_OK :forall C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
-  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  find_class C = Some (CD (CDecl C D0 Fs noDupfs K Ms noDupMds)) ->
   CType_OK (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
   MType_OK C (MDecl C0 m fargs noDupfargs ret).
 Proof.
