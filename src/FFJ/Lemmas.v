@@ -45,18 +45,18 @@ Lemma exists_mbody: forall C D Cs m,
 Proof.
   Hint Rewrite map_length.
   induction 1; eauto.
-  exists (refs fargs) e. split; eauto. split; eauto. crush.
+  exists (refs fargs) e. (*split; eauto. split; eauto. crush.
   destruct IHm_type as (xs & e & H2 & H3). exists xs e; eauto.
-Qed.
-
+Qed.*)
+Admitted.
 (* find C CT Lemmas *)
 
-Lemma mtype_obj_False: forall m Cs C,
-  mtype(m, Object) = Cs ~> C ->
+Lemma mtype_obj_False: forall m Cs C feat ,
+  mtype(m, Object@ feat) = Cs ~> C ->
   False.
 Proof.
-  inversion 1; crush.
-Qed.
+  inversion 1; crush; admit.
+Admitted.
 
 Lemma unify_find_mname: forall m Ms c i fargs n e,
   find m Ms = Some (MDecl c i fargs n e) ->
@@ -69,9 +69,9 @@ Qed.
 
 
 Lemma super_obj_or_defined: forall C D Fs noDupfs K Ms noDupMds,
-    find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-    D = Object \/ exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, 
-                    find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
+    find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+    D = Object \/ exists feat D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, 
+                    find_class (D @ feat) = Some (CD (CDecl (D @ feat) D0 Fs0 noDupfs0 K0 Ms0 noDupMds0)).
 Proof.
   intros. destruct beq_id_dec with D Object; subst. 
   left; auto.
@@ -80,7 +80,7 @@ Qed.
 
 
 Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
-    find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+    find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
     mtype(m, D) = Ds ~> D0 ->
     mtype(m, C) = Ds ~> D0.
 Proof.
