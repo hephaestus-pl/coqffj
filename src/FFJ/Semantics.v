@@ -178,12 +178,13 @@ Inductive MRefine_OK : ClassReference -> MethodRefinement -> Prop :=
             MRefine_OK C (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
-  | T_Class : forall C D Fs noDupfs K Ms noDupMds fdecl,
-            fields D fdecl ->
+  | T_Class : forall C D feat Fs noDupfs K Ms noDupMds fdecl,
+            get_CD_feat D feat ->
+            fields (D@feat) fdecl ->
             NoDup (refs (fdecl ++ Fs)) ->
             Forall (MType_OK C) (Ms) ->
-            find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
-            CType_OK (CDecl C (ref D) Fs noDupfs K Ms noDupMds).
+            find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+            CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
 Inductive CRefine_OK: ClassRefinement -> Prop :=
   | T_Refine : forall P R C Pfields Fs noDupfs Kr Ms noDupMds Mrs noDupMrs D' Fs' noDupfs' K' Ms' noDupMds',
@@ -206,7 +207,7 @@ Hypothesis dec_subtype: forall C D,
 Hypothesis antisym_subtype:
   antisymmetric _ Subtype.
 
-Hypothesis obj_notin_dom: find Object CT = None.
+Hypothesis obj_notin_dom: forall feat, find_class (Object@feat) = None.
 Hint Rewrite obj_notin_dom.
 
 Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,

@@ -260,8 +260,8 @@ Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
 Hint Constructors methodDecl_in_succs m_type m_body fields rfields.
 
 Inductive override (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
-  | C_override : forall Ds D0,
-    (mtype(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+  | C_override : 
+    (forall Ds D0, mtype(m, D) = Ds ~> D0 -> (Ds = Cs /\ C0 = D0)) ->
     override m D Cs C0.
 
 (* Should I do this one in terms of method_in_succ also? 

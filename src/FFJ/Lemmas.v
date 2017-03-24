@@ -55,8 +55,8 @@ Lemma mtype_obj_False: forall m Cs C feat ,
   mtype(m, Object@ feat) = Cs ~> C ->
   False.
 Proof.
-  inversion 1; crush; admit.
-Admitted.
+  inversion 1; crush.
+Qed.
 
 Lemma unify_find_mname: forall m Ms c i fargs n e,
   find m Ms = Some (MDecl c i fargs n e) ->
@@ -78,6 +78,12 @@ Proof.
   right. eapply superClass_in_dom; eauto.
 Qed.
 
+Lemma same_superClasses: forall C D Fs noDupfs K Ms noDupMds D' Fs' noDupfs' K' Ms' noDupMds' feat feat',
+  find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) -> 
+  find_class C = Some (CD (CDecl C D' Fs' noDupfs' K' Ms' noDupMds')) -> 
+  D@feat = D'@feat'.
+Proof.
+Admitted.
 
 Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
@@ -86,18 +92,19 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
 Proof.
   Hint Resolve mtype_obj_False.  
   intros. apply ClassesOK in H.
-  inversion H; subst; sort; clear H.
+  inversion H. destruct D as [D DFeat]; subst; sort; clear H.
   edestruct super_obj_or_defined; eauto; subst.
   false; eapply mtype_obj_False; eauto.
-  destruct H as (?D & Fs1 & noDupfs0 & K0 & Ms0 & noDupMds0 & H).
+  destruct H as (?Dfeat & ?D & Fs1 & noDupfs0 & K0 & Ms0 & noDupMds0 & H).
   destruct (@find_dec MethodDecl) with MDeclRef Ms m. destruct e. destruct x. sort.
   apply unify_find_mname in H1; destruct H1; subst.
   eapply Forall_find in H9; [|eexact H1].
-  destruct H9; subst; sort. assert (D2 = D) by crush; subst.
+  destruct H9; subst; sort. assert (D2 = D@DFeat). destruct D2 as [D2 D2F]; eapply same_superClasses; eauto. subst.
   apply unify_find_mname in H1. destruct H1; subst.
-  destruct H5 with Ds D0; subst; auto. eapply mty_ok; crush.
+  destruct H5. destruct H5 with Ds D0; subst; auto. eapply mty_ok; crush.
+  admit.
   eapply mty_no_override; eauto.
-Qed.
+Admitted.
 
 (* fields Lemmas *)
 Lemma fields_obj_nil: forall f,

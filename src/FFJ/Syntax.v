@@ -193,3 +193,9 @@ Parameter RT: [FeatureName].
 Definition find_class (C: ClassReference) :=
   let FT := get_feature (feature C) CT in
   find (ref C) FT.
+
+
+Inductive get_CD_feat (C: ClassName) (feat: FeatureName): Prop :=
+  | G_getClassDecl : forall D' Fs noDupfs K Ms noDupMds,
+    find C CT = Some (CD (CDecl (C@feat) D' Fs noDupfs K Ms noDupMds)) ->
+    get_CD_feat C feat.
