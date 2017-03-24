@@ -23,7 +23,6 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
-Print Nat.divide.
 
 (* We can also fetch the next refinement in the refinement chain.
    For this, we encode a feature by a number of zeros (n and m) on the right of a ClassName.

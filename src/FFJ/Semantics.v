@@ -220,9 +220,6 @@ Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds,
 Hint Resolve ClassesOK.
 
 End CTSanity.
-
-Print ExpTyping_ind.
-
 Definition ExpTyping_ind' := 
   fun (Gamma : env ClassName) (P : Exp -> ClassName -> Prop)
   (f : forall (x : id) (C : ClassName), get Gamma x = Some C -> P (ExpVar x) C)
