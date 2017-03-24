@@ -37,9 +37,9 @@ Inductive ExpTyping (Gamma: env ClassName) : Exp -> ClassName -> Prop :=
                 Ci = fieldType Fi ->
                 fi = ref Fi ->
                 Gamma |-- ExpFieldAccess e0 fi : Ci
-  | T_Invk : forall e0 C Cs C0Ref C0 Ds m es,
+  | T_Invk : forall e0 C Cs C0 Ds m es,
                 Gamma |-- e0 : (ref C0) ->
-                mtype(m, C0Ref) = Ds ~> C ->
+                mtype(m, C0) = Ds ~> C ->
                 Forall2 (ExpTyping Gamma) es Cs ->
                 Forall2 Subtype Cs Ds ->
                 Gamma |-- ExpMethodInvoc e0 m es : C
@@ -210,42 +210,44 @@ Hypothesis obj_notin_dom: find Object CT = None.
 Hint Rewrite obj_notin_dom.
 
 Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
-  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
   D <> Object ->
-  exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
+  exists feat D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find_class (D @ feat) = Some (CD (CDecl (D @ feat) D0 Fs0 noDupfs0 K0 Ms0 noDupMds0)).
 
 Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds, 
-  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
   CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 Hint Resolve ClassesOK.
 
 End CTSanity.
 
+Print ExpTyping_ind.
+
 Definition ExpTyping_ind' := 
   fun (Gamma : env ClassName) (P : Exp -> ClassName -> Prop)
   (f : forall (x : id) (C : ClassName), get Gamma x = Some C -> P (ExpVar x) C)
-  (f0 : forall (e0 : Exp) (C0 : ClassName) (fs : [FieldDecl]) (i : nat) (Fi : FieldDecl)
+  (f0 : forall (e0 : Exp) (C0 : ClassReference) (fs : [FieldDecl]) (i : nat) (Fi : FieldDecl)
           (Ci : ClassName) (fi : id),
-        Gamma |-- e0 : C0 ->
-        P e0 C0 ->
+        Gamma |-- e0 : ref C0 ->
+        P e0 (ref C0) ->
         fields C0 fs ->
         nth_error fs i = Some Fi -> Ci = fieldType Fi -> fi = ref Fi -> P (ExpFieldAccess e0 fi) Ci)
-  (f1 : forall (e0 : Exp) (C : ClassName) (Cs : [ClassName]) (C0 : ClassName) (Ds : [ClassName]) 
+  (f1 : forall (e0 : Exp) (C : ClassName) (Cs : [ClassName]) (C0 : ClassReference) (Ds : [ClassName]) 
           (m : id) (es : [Exp]),
-        Gamma |-- e0 : C0 ->
-        P e0 C0 ->
+        Gamma |-- e0 : (ref C0) ->
+        P e0 (ref C0) ->
         mtype( m, C0)= Ds ~> C ->
         Forall2 (ExpTyping Gamma) es Cs ->
         Forall2 Subtype Cs Ds -> 
         Forall2 P es Cs ->
         P (ExpMethodInvoc e0 m es) C)
-  (f2 : forall (C : id) (Ds Cs : [ClassName]) (fs : [FieldDecl]) (es : [Exp]),
+  (f2 : forall (C : ClassReference) (Ds Cs : [ClassName]) (fs : [FieldDecl]) (es : [Exp]),
         fields C fs ->
         Ds = map fieldType fs ->
         Forall2 (ExpTyping Gamma) es Cs ->
         Forall2 Subtype Cs Ds -> 
         Forall2 P es Cs ->
-        P (ExpNew C es) C)
+        P (ExpNew (ref C) es) (ref C))
   (f3 : forall (e0 : Exp) (D C : ClassName), Gamma |-- e0 : D -> P e0 D -> D <: C -> P (ExpCast C e0) C)
   (f4 : forall (e0 : Exp) (C : id) (D : ClassName),
         Gamma |-- e0 : D -> P e0 D -> C <: D -> C <> D -> P (ExpCast C e0) C)
@@ -254,8 +256,8 @@ Definition ExpTyping_ind' :=
 fix F (e : Exp) (c : ClassName) (e0 : Gamma |-- e : c) {struct e0} : P e c :=
   match e0 in (_ |-- e1 : c0) return (P e1 c0) with
   | T_Var _ x C e1 => f x C e1
-  | T_Field _ e1 C0 fs i Fi Ci fi e2 f6 e3 e4 e5 => f0 e1 C0 fs i Fi Ci fi e2 (F e1 C0 e2) f6 e3 e4 e5
-  | T_Invk _ e1 C Cs C0 Ds m es e2 m0 f6 f7 => f1 e1 C Cs C0 Ds m es e2 (F e1 C0 e2) m0 f6 f7 
+  | T_Field _ e1 C0 fs i Fi Ci fi e2 f6 e3 e4 e5 => f0 e1 C0 fs i Fi Ci fi e2 (F e1 (ref C0) e2) f6 e3 e4 e5
+  | T_Invk _ e1 C Cs C0 Ds m es e2 m0 f6 f7 => f1 e1 C Cs C0 Ds m es e2 (F e1 (ref C0) e2) m0 f6 f7 
           ((fix list_Forall_ind (es' : [Exp]) (Cs' : [ClassName]) 
             (map : Forall2 (ExpTyping Gamma) es' Cs'): 
                Forall2 P es' Cs' :=
