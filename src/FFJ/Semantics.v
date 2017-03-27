@@ -210,10 +210,11 @@ Hypothesis antisym_subtype:
 Hypothesis obj_notin_dom: forall feat, find_class (Object@feat) = None.
 Hint Rewrite obj_notin_dom.
 
-Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
+Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds feat,
   find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+  get_CD_feat D feat ->
   D <> Object ->
-  exists feat D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find_class (D @ feat) = Some (CD (CDecl (D @ feat) D0 Fs0 noDupfs0 K0 Ms0 noDupMds0)).
+  exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find_class (D @ feat) = Some (CD (CDecl (D @ feat) D0 Fs0 noDupfs0 K0 Ms0 noDupMds0)).
 
 Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds, 
   find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->

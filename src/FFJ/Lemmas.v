@@ -68,9 +68,10 @@ Proof.
 Qed.
 
 
-Lemma super_obj_or_defined: forall C D Fs noDupfs K Ms noDupMds,
+Lemma super_obj_or_defined: forall C D Fs noDupfs K Ms noDupMds feat,
     find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
-    D = Object \/ exists feat D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, 
+    get_CD_feat D feat ->
+    D = Object \/ exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, 
                     find_class (D @ feat) = Some (CD (CDecl (D @ feat) D0 Fs0 noDupfs0 K0 Ms0 noDupMds0)).
 Proof.
   intros. destruct beq_id_dec with D Object; subst. 
@@ -85,25 +86,28 @@ Lemma same_superClasses: forall C D Fs noDupfs K Ms noDupMds D' Fs' noDupfs' K' 
 Proof.
 Admitted.
 
-Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
-    find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
-    mtype(m, D) = Ds ~> D0 ->
+Lemma methods_same_signature: forall C D feat Fs noDupfs K Ms noDupMds Ds D0 m,
+    find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+    get_CD_feat D feat ->
+    mtype(m, D @ feat) = Ds ~> D0 ->
     mtype(m, C) = Ds ~> D0.
 Proof.
   Hint Resolve mtype_obj_False.  
-  intros. apply ClassesOK in H.
-  inversion H. destruct D as [D DFeat]; subst; sort; clear H.
+  intros. apply ClassesOK in H. subst.
+  inversion H. subst; sort; clear H.
   edestruct super_obj_or_defined; eauto; subst.
   false; eapply mtype_obj_False; eauto.
   destruct H as (?Dfeat & ?D & Fs1 & noDupfs0 & K0 & Ms0 & noDupMds0 & H).
   destruct (@find_dec MethodDecl) with MDeclRef Ms m. destruct e. destruct x. sort.
   apply unify_find_mname in H1; destruct H1; subst.
   eapply Forall_find in H9; [|eexact H1].
-  destruct H9; subst; sort. assert (D2 = D@DFeat). destruct D2 as [D2 D2F]; eapply same_superClasses; eauto. subst.
+  destruct H9; subst; sort. assert (D2 = D@Dfeat). destruct D2 as [D2 D2F]; eapply same_superClasses; eauto. subst.
   apply unify_find_mname in H1. destruct H1; subst.
   destruct H5. destruct H5 with Ds D0; subst; auto. eapply mty_ok; crush.
-  admit.
-  eapply mty_no_override; eauto.
+  rewrite H4 in H10. inversion H10.
+  eapply mty_no_override. admit. eapply get_decl. eexact H. eexact e. admit.
+  exact H0.
+  crush.
 Admitted.
 
 (* fields Lemmas *)
