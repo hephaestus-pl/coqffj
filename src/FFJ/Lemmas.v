@@ -86,29 +86,110 @@ Lemma same_superClasses: forall C D Fs noDupfs K Ms noDupMds D' Fs' noDupfs' K' 
 Proof.
 Admitted.
 
-Lemma methods_same_signature: forall C D feat Fs noDupfs K Ms noDupMds Ds D0 m,
-    find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+Ltac class_OK C:=
+  match goal with
+    | [ H: find_class C = Some (CD(CDecl _ _ _ _ _ _ _ )) |- _ ] => 
+      apply ClassesOK in H; inversion H; subst; sort; clear H
+  end.
+
+Ltac insterU H :=
+  repeat match type of H with
+           | forall x : ?T, _ =>
+             let x := fresh "x" in
+               evar (x : T);
+               let x' := eval unfold x in x in
+                 clear x; specialize (H x')
+         end.
+
+Ltac superclass_defined_or_obj C :=
+  match goal with
+  | [H1: find_class C = Some (CD (CDecl _ ?D _ _ _ _ _)), H2: get_CD_feat ?D ?feat |- _ ] => 
+      edestruct super_obj_or_defined; [eexact H1 | eexact H2 | | ]; subst
+  end.
+
+Ltac find_dec_with T Ref L i :=
+  destruct (@find_dec T) with Ref L i.
+
+Ltac find_dec_tac L i:=
+  match type of L with
+  | list ?T => let H := fresh "H" in destruct (find_dec L i) as [H|H]
+  end.
+
+Ltac decompose_ex H :=
+  repeat match type of H with
+           | ex (fun x => _) =>
+             let x := fresh x in
+             destruct H as [x H]; sort
+         end.
+
+Ltac decompose_exs :=
+  repeat match goal with
+  | [H: exists x, _ |- _ ] => decompose_ex H
+  end.
+
+Ltac inv_decl :=
+  let C := fresh "C" in
+  let D := fresh "D" in
+  let K := fresh "K" in
+  let m := fresh "m" in
+  let f := fresh "f" in
+  let fargs := fresh "fargs" in
+  let noDupFargs := fresh "noDupFargs" in
+  let fDecls := fresh "fDecls" in
+  let noDupfDecls := fresh "noDupfDecls" in
+  let mDecls := fresh "mDecls" in
+  let noDupmDecls := fresh "noDupmDecls" in
+  repeat match goal with
+  | [ MD : MethodDecl |- _ ] => destruct MD as [C m fargs noDupFargs e]
+  | [ FD : FieldDecl |- _ ] => destruct FD as [C f]
+  | [ CD : ClassDecl |- _ ] => destruct CD as [C D fDecls noDupfDecls mDecls noDupmDecls]
+  end.
+
+Ltac unify_find_ref :=
+  let H := fresh "H" in
+  repeat match goal with
+  | [H1: find ?x ?xs = Some ?u |- _] => assert (ref u = x) as H; [eapply find_ref_inv; eauto|]; subst;
+    repeat match goal with
+      | [ H2 : context[ref u] |- _] => simpl in H2
+    end; simpl
+  end.
+
+
+Ltac Forall_find_tac :=
+  let H := fresh "H" in
+  match goal with
+  | [ H1: Forall ?P ?l, H2: find ?x ?l = _ |- _ ] => lets H: H1; eapply Forall_find in H; [|eexact H2]
+  end.
+
+Ltac mtypes_ok :=
+  match goal with
+  | [H: MType_OK _ _ |- _ ] => destruct H; subst; sort
+  end.
+
+Ltac elim_eqs :=
+  match goal with
+  | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inversion H1; clear H1; subst
+  end.
+
+Ltac unify_override :=
+  match goal with
+  | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst]
+  end.
+
+Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m feat,
+    find_class C = Some (CD(CDecl C D Fs noDupfs K Ms noDupMds)) ->
     get_CD_feat D feat ->
-    mtype(m, D @ feat) = Ds ~> D0 ->
+    mtype(m, D@feat) = Ds ~> D0 ->
     mtype(m, C) = Ds ~> D0.
 Proof.
-  Hint Resolve mtype_obj_False.  
-  intros. apply ClassesOK in H. subst.
-  inversion H. subst; sort; clear H.
-  edestruct super_obj_or_defined; eauto; subst.
-  false; eapply mtype_obj_False; eauto.
-  destruct H as (?Dfeat & ?D & Fs1 & noDupfs0 & K0 & Ms0 & noDupMds0 & H).
-  destruct (@find_dec MethodDecl) with MDeclRef Ms m. destruct e. destruct x. sort.
-  apply unify_find_mname in H1; destruct H1; subst.
-  eapply Forall_find in H9; [|eexact H1].
-  destruct H9; subst; sort. assert (D2 = D@Dfeat). destruct D2 as [D2 D2F]; eapply same_superClasses; eauto. subst.
-  apply unify_find_mname in H1. destruct H1; subst.
-  destruct H5. destruct H5 with Ds D0; subst; auto. eapply mty_ok; crush.
-  rewrite H4 in H10. inversion H10.
-  eapply mty_no_override. admit. eapply get_decl. eexact H. eexact e. admit.
-  exact H0.
-  crush.
-Admitted.
+  Hint Resolve mtype_obj_False.
+  intros.
+  class_OK C. superclass_defined_or_obj C; [false; eauto | ].
+  - find_dec_tac Ms m.
+    decompose_exs. inv_decl. unify_find_ref. Forall_find_tac.
+    mtypes_ok. elim_eqs. destruct D2 as [?D] in *. unify_find_ref. unify_override.
+    eapply mty_ok; crush.
+Qed.
 
 (* fields Lemmas *)
 Lemma fields_obj_nil: forall f,
