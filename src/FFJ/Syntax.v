@@ -100,52 +100,37 @@ Instance MRefineRef : Referable MethodRefinement :={
 *)
 Definition FeatureName := id.
 
-Inductive ClassReference: Type :=
-  | CRef : id -> FeatureName -> ClassReference.
+Inductive RefinementName: Type :=
+  | RName : id -> FeatureName -> RefinementName.
 
-Notation "C @ Feat" := (CRef C Feat) (at level 30).
+Notation "C @ Feat" := (RName C Feat) (at level 30).
 
-Class Featurable (A: Set) :={
-  feature : A -> FeatureName;
-  get_feature : FeatureName -> list A -> list A := 
-  fun key l => filter (fun x => beq_id key (feature x)) l
-}.
 
-Instance ClassDeclFeature: Referable ClassReference :={
+Instance RefinementNameReference: Referable RefinementName :={
   ref C :=
   match C with 
-   | (CRef i _) => i end
-}.
-
-Instance ClassReferenceFeature: Featurable ClassReference :={
-  feature C :=
-  match C with 
-   | (CRef _ f) => f end
+   | (RName _ feat) => feat end
 }.
 
 
 Inductive ClassDecl :=
   (* CDecl is the name of the class, the superclass, non duplicate fields,
   constructor and non duplicate methods *)
-  | CDecl: ClassReference -> ClassName -> 
+  | CDecl: ClassName -> ClassName -> 
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> Constructor -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassDecl.
 
 Instance CDeclRef : Referable ClassDecl :={
   ref cdecl := 
     match cdecl with 
-   | CDecl cref _ _ _ _ _ _ => ref cref end
+   | CDecl cref _ _ _ _ _ _ => cref end
 }.
-Instance CDeclFeat : Featurable ClassDecl :={
-  feature cdecl := 
-    match cdecl with 
-   | CDecl cref _ _ _ _ _ _ => feature cref end
-}.
+
 Inductive ClassRefinement :=
   (* CRefine is the name of the class
   , non duplicate fields,
   constructor and non duplicate methods *)
-  | CRefine: ClassReference ->
+  | CRefine: RefinementName ->
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) ->
     forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
@@ -156,46 +141,19 @@ Instance CRefinementRef : Referable ClassRefinement :={
     match cdecl with 
    | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
 }.
-Instance CRefinementFeat : Featurable ClassRefinement :={
-  feature cdecl := 
-    match cdecl with 
-   | (CRefine Cref _ _ _ _ _ _ _) => feature Cref end
-}.
-
-Inductive Class :=
-  | CD : ClassDecl -> Class
-  | CR : ClassRefinement -> Class.
-
-Instance ClassRef : Referable Class :={
-  ref Cl := 
-    match Cl with 
-   | CD Cd => ref Cd
-   | CR Cr as Cref => ref Cr end
-}.
-Instance ClassFeat : Featurable Class :={
-  feature Cl := 
-    match Cl with 
-   | CD Cd => feature Cd
-   | CR Cr as Cref => feature Cr end
-}.
-
 
 Inductive Program :=
-  | CProgram : forall (cDecls: [Class]), NoDup (refs cDecls) -> Exp -> Program.
+  | CProgram : forall (cDecls: [ClassDecl]), NoDup (refs cDecls) -> Exp -> Program.
 
 (* We assume a fixed Class Table *)
-Parameter CT: [Class].
+Parameter CT: [ClassDecl].
 
-(* The Refinement Table gives us the order in wich features will be applied  *)
-Parameter RT: [FeatureName].
+(* And a fixed Refinement Table *)
+Parameter RT: [ClassName * [ClassRefinement]].
 
-
-Definition find_class (C: ClassReference) :=
-  let FT := get_feature (feature C) CT in
-  find (ref C) FT.
-
-
-Inductive get_CD_feat (C: ClassName) (feat: FeatureName): Prop :=
-  | G_getClassDecl : forall D' Fs noDupfs K Ms noDupMds,
-    find C CT = Some (CD (CDecl (C@feat) D' Fs noDupfs K Ms noDupMds)) ->
-    get_CD_feat C feat.
+Instance RTRef : Referable (ClassName * [ClassRefinement]) :={
+  ref t :=
+    match t with
+    | (C, CR ) => C
+    end
+}.

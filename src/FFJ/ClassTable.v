@@ -14,8 +14,8 @@ Inductive Subtype : ClassName -> ClassName -> Prop :=
     D <: E -> 
     C <: E
   | S_Decl: forall C D fs noDupfs K mds noDupMds,
-    find_class C = Some (CD (CDecl C D fs noDupfs K mds noDupMds )) ->
-    (ref C) <: D
+    find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
+    C <: D
 where "C '<:' D" := (Subtype C D).
 Hint Constructors Subtype.
 
@@ -31,40 +31,38 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
    succ relates a Class with its nearest refinement, 
    i.e., that have the smallest number of zeros.  
    Is it possible to encode this smallest property any nicer?
- *)
-Inductive succ (C: ClassReference) (C': ClassReference): Prop :=
-  | C_succ : forall C'decl feat feat' n,
-    feat = feature C ->
-    find_where feat RT = Some n ->
-    nth_error RT (S n) = Some feat' ->
-    find_class (CRef (ref C) feat') = Some C'decl ->
-    ref C'decl = ref C' ->
-    succ C C'.
+ *) Check head.
+Inductive succ (Cl: ClassName + RefinementName) (S: RefinementName): Prop :=
+  | Class_succ : forall C Rs R,
+    Cl = inl C ->
+    find C RT = Some Rs ->
+    head (snd Rs) = R ->
+    succ Cl S
+  | Refine_succ : forall C feat Rs R n,
+    Cl = inr (C @ feat) ->
+    find C RT = Some Rs ->
+    find_where feat (refs (snd Rs)) = Some n ->
+    head (skipn (n+1) (snd Rs)) = R ->
+    succ Cl S.
 
 (* pred is just the inverse of succ *)
-Inductive pred (C: ClassReference) (C': ClassReference): Prop :=
+Inductive pred (R: RefinementName) (Cl: ClassName + RefinementName): Prop :=
   | C_pred: 
-    succ C' C ->
-    pred C C'.
+    succ Cl R ->
+    pred R Cl.
 
 (* Refinement is the transitive closure of succ *)
 Reserved Notation "C <<: D" (at level 40).
-Inductive Refinement: ClassReference -> ClassReference -> Prop :=
+Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
   | R_Trans: forall C C' C'',
     succ C C' ->
-    succ C' C'' ->
+    succ (inr C') C'' ->
     C <<: C''
   | R_succ : forall C C',
     succ C C' ->
     C <<: C'
 where "C <<: C'" := (Refinement C C').
 
-(* Last is the most specific refinement *)
-Inductive last (C: ClassReference) (C': ClassReference): Prop:=
-  | C_Last:
-    C <<: C' ->
-    (forall C'', ~succ C' C'') ->
-    last C C'.
 
 Inductive class_declaration : ClassReference -> Prop :=
   | get_decl : forall C D fs noDupfs K mds noDupMds,
