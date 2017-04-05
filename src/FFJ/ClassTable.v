@@ -86,6 +86,7 @@ Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
     NoDup (refs (fs ++ fsuc)) ->
     fields_refinement rname (fs ++ fsuc).
 
+(*
 Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=
   | MD_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
               succ C S ->
@@ -115,12 +116,14 @@ Inductive methodRefine_in_succs (m: id) (C: ClassReference) : Prop :=
               methodRefine_in_succs m SS ->
               methodRefine_in_succs m C.
 
+
 Definition method_in_succs (m: id) (C: ClassReference)  := methodDecl_in_succs m C /\ methodRefine_in_succs m C.
+*)
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
-Inductive m_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
+Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
   | mty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
-              find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find C CT = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B

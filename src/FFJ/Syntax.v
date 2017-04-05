@@ -105,13 +105,11 @@ Inductive RefinementName: Type :=
 
 Notation "C @ Feat" := (RName C Feat) (at level 30).
 
-
 Instance RefinementNameReference: Referable RefinementName :={
   ref C :=
   match C with 
-   | (RName _ feat) => feat end
+   | (RName i _) => i end
 }.
-
 
 Inductive ClassDecl :=
   (* CDecl is the name of the class, the superclass, non duplicate fields,
@@ -149,11 +147,18 @@ Inductive Program :=
 Parameter CT: [ClassDecl].
 
 (* And a fixed Refinement Table *)
-Parameter RT: [ClassName * [ClassRefinement]].
+Parameter RT: [ClassRefinement].
 
-Instance RTRef : Referable (ClassName * [ClassRefinement]) :={
-  ref t :=
-    match t with
-    | (C, CR ) => C
-    end
-}.
+Definition refinements_of (C: ClassName) := 
+  filter (fun R => beq_id C (ref R)) RT.
+
+Lemma refinements_same_name: forall C Rs,
+  refinements_of C = Rs ->
+  Forall (fun R => C = (ref R)) Rs.
+Proof.
+  Hint Resolve beq_id_eq.
+  intros. 
+  unfold refinements_of in H.
+  apply Forall_forall. intros.
+  rewrite <- H in H0. apply filter_In in H0. crush.
+Qed.
