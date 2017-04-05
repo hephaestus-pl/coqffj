@@ -2,6 +2,7 @@ Require Import String.
 Require Import Relations Decidable.
 Require Import FFJ.Base.
 Require Import FFJ.Syntax.
+Require Import Coq.Program.Basics.
 
 (* From our CT we can derive a subtype relation which is the reflexive
   and transitive closure of the subclass relation.
@@ -31,19 +32,22 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
    succ relates a Class with its nearest refinement, 
    i.e., that have the smallest number of zeros.  
    Is it possible to encode this smallest property any nicer?
- *) Check head.
-Inductive succ (Cl: ClassName + RefinementName) (S: RefinementName): Prop :=
-  | Class_succ : forall C Rs R,
+ *) Check filter.
+
+
+Inductive succ (Cl: ClassName + RefinementName) (R: RefinementName): Prop :=
+  | Class_succ : forall C feat',
     Cl = inl C ->
-    find C RT = Some Rs ->
-    head (snd Rs) = R ->
-    succ Cl S
-  | Refine_succ : forall C feat Rs R n,
+    head (features (refinements_of C)) = Some feat' ->
+    R = C @ feat' ->
+    succ Cl R
+  | Refine_succ : forall C Rs feat n feat',
     Cl = inr (C @ feat) ->
-    find C RT = Some Rs ->
-    find_where feat (refs (snd Rs)) = Some n ->
-    head (skipn (n+1) (snd Rs)) = R ->
-    succ Cl S.
+    refinements_of C = Rs ->
+    find_where feat (features Rs) = Some n ->
+    head (skipn (S n) (features Rs)) = Some feat' ->
+    R = C @ feat' ->
+    succ Cl R.
 
 (* pred is just the inverse of succ *)
 Inductive pred (R: RefinementName) (Cl: ClassName + RefinementName): Prop :=
@@ -63,28 +67,31 @@ Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
     C <<: C'
 where "C <<: C'" := (Refinement C C').
 
-Hint Constructors succ Refinement.
+Hint Constructors succ pred Refinement.
+
+Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
+  | F_Refine: forall R S C feat Rs S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    rname = C @ feat ->
+    Succ (inr rname) S ->
+    refinements_of C = Some Rs -> 
+    find (feature S) Rs = Some (CRefine sname fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    succ (inl C) S ->
+    fields_refinement S fsuc ->
+    NoDup (refs (fs ++ fsuc)) ->
+    fields_refinement rname (fs ++ fsuc).
 
 Inductive fields : id -> [FieldDecl] -> Prop :=
   | F_Obj : fields Object nil
-  | F_Decl : forall C D fs  noDupfs K mds noDupMds fs', 
+  | F_Decl : forall C R D fs  noDupfs K mds noDupMds fs', 
      find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
+     succ C R ->
+     
      fields D fs' ->
      NoDup (refs (fs' ++ fs)) ->
      fields C (fs'++fs).
 Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"].
-
-Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
-  | F_Refine: forall rname C feat Rs S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-    rname = C @ feat ->
-    find C RT = Some Rs -> 
-    find feat (snd Rs) = Some (CRefine rname fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-    succ (inl C) S ->
-    fields_refinement S fsuc ->
-    NoDup (refs (fs ++ fsuc)) ->
-    fields_refinement rname (fs ++ fsuc).
 
 (*
 Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=

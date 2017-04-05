@@ -101,9 +101,10 @@ Instance MRefineRef : Referable MethodRefinement :={
 Definition FeatureName := id.
 
 Inductive RefinementName: Type :=
-  | RName : id -> FeatureName -> RefinementName.
+  | RName : ClassName -> FeatureName -> RefinementName.
 
 Notation "C @ Feat" := (RName C Feat) (at level 30).
+
 
 Instance RefinementNameReference: Referable RefinementName :={
   ref C :=
@@ -139,6 +140,13 @@ Instance CRefinementRef : Referable ClassRefinement :={
     match cdecl with 
    | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
 }.
+
+Definition feature (R: ClassRefinement) := 
+  match R with
+  | CRefine (RName _ feat) _ _ _ _ _ _ _ => feat
+  end.
+
+Definition features := map feature.
 
 Inductive Program :=
   | CProgram : forall (cDecls: [ClassDecl]), NoDup (refs cDecls) -> Exp -> Program.
