@@ -63,54 +63,28 @@ Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
     C <<: C'
 where "C <<: C'" := (Refinement C C').
 
+Hint Constructors succ Refinement.
 
-Inductive class_declaration : ClassReference -> Prop :=
-  | get_decl : forall C D fs noDupfs K mds noDupMds,
-     find_class C = Some (CD (CDecl C D fs noDupfs K mds noDupMds)) ->
-    class_declaration C.
-
-Hint Constructors succ Refinement last class_declaration.
-
-Inductive fields : ClassReference -> [FieldDecl] -> Prop :=
- | F_Obj : forall feat, fields (Object @ feat) nil
- | F_Decl : forall C D S fs fsuc noDupfs K mds noDupMds fs',
-     find_class C = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
-     class_declaration D ->
-     succ C S ->
-     fields S fsuc ->
-     fields D fs' ->
-     NoDup (refs (fs' ++ fs ++ fsuc)) ->
-     fields C (fs' ++ fs ++ fsuc)
-  | F_Refine: forall C S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-     find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-     succ C S ->
-     fields S fsuc ->
-     NoDup (refs (fs ++ fsuc)) ->
-     fields C (fs ++ fsuc).
-Tactic Notation "fields_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "F_Obj" | Case_aux c "F_Decl"
-  | Case_aux c "F_Refine" ].
-
-Inductive rfields : ClassReference -> [FieldDecl] -> Prop :=
- | RF_Obj : forall feat, rfields (Object @ feat) nil
- | RF_Decl : forall C D S fs noDupfs K mds noDupMds fs',
-     find_class C = Some (CD (CDecl C (ref D) fs noDupfs K mds noDupMds)) ->
-     class_declaration D ->
-     succ C S ->
+Inductive fields : id -> [FieldDecl] -> Prop :=
+  | F_Obj : fields Object nil
+  | F_Decl : forall C D fs  noDupfs K mds noDupMds fs', 
+     find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs)) ->
-     rfields C (fs' ++ fs)
-  | RF_Refine: forall C S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-     find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-     pred C S ->
-     fields S fpred ->
-     NoDup (refs (fpred ++ fs)) ->
-     rfields C (fpred ++ fs).
-Tactic Notation "rfields_cases" tactic(first) ident(c) :=
+     fields C (fs'++fs).
+Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "RF_Obj" | Case_aux c "RF_Decl"
-  | Case_aux c "RF_Refine" ].
+  [ Case_aux c "F_Obj" | Case_aux c "F_Decl"].
+
+Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
+  | F_Refine: forall rname C feat Rs S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    rname = C @ feat ->
+    find C RT = Some Rs -> 
+    find feat (snd Rs) = Some (CRefine rname fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    succ (inl C) S ->
+    fields_refinement S fsuc ->
+    NoDup (refs (fs ++ fsuc)) ->
+    fields_refinement rname (fs ++ fsuc).
 
 Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=
   | MD_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
