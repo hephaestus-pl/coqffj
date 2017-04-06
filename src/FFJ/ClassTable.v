@@ -208,32 +208,32 @@ Inductive introduce (m: id) (R: RefinementName): Prop :=
     (forall Ds D0, ~ mtype(m, C) = Ds ~> D0) ->
     introduce m R.
 
-Inductive extend (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName): Prop :=
-  | C_extend : forall Ds D0,
-    (mtype_r(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
-    extend m D Cs C0.
+Inductive extend (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
+  | E_Refinement : forall S Ds D0,
+    pred R (inr S) ->
+    (mtype_r(m, S) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+    extend m R Cs C0
+  | E_Class : forall C Ds D0,
+    pred R (inl C) ->
+    (mtype(m, C) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+    extend m R Cs C0.
 
-Lemma find_class_same_ref: forall C CDecl,
-  find_class C = Some CDecl ->
-  ref C = ref CDecl.
+Lemma find_class_same_ref: forall C CD,
+  find C CT = Some CD ->
+  C = ref CD.
 Proof.
-  intros. unfold find_class in H. apply find_ref_inv in H. auto.
+  intros. apply find_ref_inv in H. auto.
 Qed.
 
 Lemma succ_same_ref : forall R C,
-  succ R C ->
-  ref R = ref C.
+  succ (inl C) R ->
+  ref R = C.
 Proof.
-  induction 1. 
-  apply find_class_same_ref in H2; crush.
-Qed.
+  induction 1.
+Admitted.
 
 Lemma refinement_same_ref : forall R C,
-  R <<: C ->
-  ref R = ref C.
+  (inl C) <<: R ->
+  ref R = C.
 Proof.
-  intros. induction H.
-  rewrite succ_same_ref with C C'; eauto.
-  rewrite succ_same_ref with C' C''; eauto.
-  rewrite succ_same_ref with C C'; eauto.
-Qed.
+Admitted.
