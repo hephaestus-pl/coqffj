@@ -151,12 +151,17 @@ Tactic Notation "mtype_cases" tactic(first) ident(c) :=
 
 Reserved Notation "'mbody_r(' m ',' R ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop :=
-  | mdyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
+  | mbdyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody_r(m, R) = xs o e
-  | mdyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+  | mbdyr_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
+              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
+              refs fargs = xs ->
+              mbody_r(m, R) = xs o e
+  | mbdyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               pred R (inr S) ->
