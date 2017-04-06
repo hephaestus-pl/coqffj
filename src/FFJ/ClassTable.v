@@ -159,57 +159,39 @@ Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop
   | mdyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
-              succ (inr R) S ->
+              pred R (inr S) ->
               mbody_r(m, S) = xs o e ->
               mbody_r(m, R) = xs o e
   where "'mbody_r(' m ',' R ')' '=' xs 'o' e"
         := (mbody_refinement m R xs e).
 
 Reserved Notation "'mbody(' m ',' D ')' '=' xs 'o' e" (at level 40, xs at next level).
-Inductive m_body (m: id) (C: ClassReference) (xs: [ClassName]) (e: Exp) : Prop:=
+Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
   | mbdy_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
-              find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
+              find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = Some (MDecl C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
-              ~ method_in_succs m C ->
+              (forall S xs' e', (inl C) <<: S -> ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, C) = xs o e
   | mbdy_no_override: forall D Fs K Ms noDupfs noDupMds,
-              find_class C = Some (CD (CDecl C (ref D) Fs noDupfs K Ms noDupMds)) ->
-              class_declaration D ->
+              find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = None ->
-              ~ method_in_succs m C ->
+              (forall S xs' e', (inl C) <<: S -> ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, D) = xs o e ->
               mbody(m, C) = xs o e
-  | mbdy_succ : forall S,
-              succ C S ->
-              mbody(m, S) = xs o e ->
-              mbody(m, C) = xs o e
-  | mbdy_refine_mdecl : forall Fs noDupfs Kr MDs noDupMds MRs noDupMrs C0 fargs noDupfargs,
-              find_class C = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
-              ~ method_in_succs m C ->
-              find m MDs = Some (MDecl C0 m fargs noDupfargs e) ->
-              refs fargs = xs ->
-              mbody(m, C) = xs o e
-  | mbdy_refine_mref : forall Fs noDupfs Kr MDs noDupMds MRs noDupMrs C0 fargs noDupfargs,
-              find_class C = Some (CR (CRefine C Fs noDupfs Kr MDs noDupMds MRs noDupMrs)) ->
-              ~ method_in_succs m C ->
-              find m MRs = Some (MRefine C0 m fargs noDupfargs e) ->
-              refs fargs = xs ->
-              mbody(m, C) = xs o e
-  | mbdy_refine_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-              succ C S ->
-              mbody(m, S) = xs o e ->
+  | mbdy_last : forall S,
+              (inl C) <<: S -> 
+              last (inr S) ->
+              mbody_r(m, S) = xs o e ->
               mbody(m, C) = xs o e
   where "'mbody(' m ',' D ')' '=' xs 'o' e" := (m_body m D xs e).
 
 Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "mbdy_ok" | Case_aux c "mbdy_no_override"
-  | Case_aux c "mbdy_succ" | Case_aux c "mbdy_refine_mdecl"
-  | Case_aux c "mbdy_refine_mref" | Case_aux c "mbdy_refine_succ"].
+  | Case_aux c "mbdy_last" ].
 
-Hint Constructors methodDecl_in_succs m_type m_body fields rfields.
+Hint Constructors mbody_refinement m_body.
 
 Inductive override (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
   | C_override : 
