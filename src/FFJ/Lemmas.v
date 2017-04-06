@@ -9,18 +9,19 @@ Include FFJ.Semantics.CTSanity.
 
 (* Auxiliary Lemmas *)
 (* mtype / MType_OK lemmas *)
-Lemma unify_returnType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
+Lemma unify_returnType' : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
   mtype( m, C)= Ds ~> D ->
-  find_class C = Some (CD (CDecl C D0 Fs noDupfs K Ms noDupMds)) ->
+  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
   D = C0.
 Proof.
   induction 1; crush.
 Qed.
 
+
 Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
   mtype( m, C)= Ds ~> D ->
-  find_class C = Some (CD (CDecl C D0 Fs noDupfs K Ms noDupMds)) ->
+  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
   Ds = map fargType fargs.
 Proof.
@@ -29,67 +30,109 @@ Qed.
 
 Lemma methodDecl_OK :forall C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
-  find_class C = Some (CD (CDecl C D0 Fs noDupfs K Ms noDupMds)) ->
-  CType_OK (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
   MType_OK C (MDecl C0 m fargs noDupfargs ret).
 Proof.
-  inversion 3. 
+  intros. apply ClassesOK in H0; inversion H0.
   match goal with
   [ H: Forall _ _ |- _ ] =>  eapply Forall_find in H; eauto
   end.
 Qed.
+Hint Resolve methodDecl_OK.
 
 Lemma exists_mbody: forall C D Cs m,
   mtype(m, C) = Cs ~> D ->
   exists xs e, mbody(m, C) = xs o e /\ NoDup (this :: xs) /\ length Cs = length xs.
 Proof.
-  Hint Rewrite map_length.
   induction 1; eauto.
-  exists (refs fargs) e. (*split; eauto. split; eauto. crush.
-  destruct IHm_type as (xs & e & H2 & H3). exists xs e; eauto.
-Qed.*)
-Admitted.
+  - exists (refs fargs) e; repeat (split; eauto); crush.
+  - crush; eexists; eauto.
+Qed.
+
 (* find C CT Lemmas *)
 
-Lemma mtype_obj_False: forall m Cs C feat ,
-  mtype(m, Object@ feat) = Cs ~> C ->
+Lemma mtype_obj_False: forall m Cs C,
+  mtype(m, Object) = Cs ~> C ->
   False.
 Proof.
   inversion 1; crush.
 Qed.
+Hint Resolve mtype_obj_False.
 
-Lemma unify_find_mname: forall m Ms c i fargs n e,
-  find m Ms = Some (MDecl c i fargs n e) ->
-  find m Ms = Some (MDecl c m fargs n e) /\ m = i.
-Proof.
-  intros.
-  assert (ref (MDecl c i fargs n e) = m). 
-  eapply find_ref_inv; eauto. crush.
-Qed.
-
-
-Lemma super_obj_or_defined: forall C D Fs noDupfs K Ms noDupMds feat,
-    find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
-    get_CD_feat D feat ->
+Lemma super_obj_or_defined: forall C D Fs noDupfs K Ms noDupMds,
+    find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
     D = Object \/ exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, 
-                    find_class (D @ feat) = Some (CD (CDecl (D @ feat) D0 Fs0 noDupfs0 K0 Ms0 noDupMds0)).
+                    find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
 Proof.
-  intros. destruct beq_id_dec with D Object; subst. 
+  intros. destruct beq_id_dec with D Object; subst.
   left; auto.
   right. eapply superClass_in_dom; eauto.
 Qed.
 
-Lemma same_superClasses: forall C D Fs noDupfs K Ms noDupMds D' Fs' noDupfs' K' Ms' noDupMds' feat feat',
-  find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) -> 
-  find_class C = Some (CD (CDecl C D' Fs' noDupfs' K' Ms' noDupMds')) -> 
-  D@feat = D'@feat'.
+
+(* fields Lemmas *)
+Lemma fields_obj_nil: forall f,
+  fields Object f -> f = nil.
 Proof.
-Admitted.
+  remember Object.
+  induction 1; crush.
+Qed.
+
+Lemma fields_NoDup : forall C fs,
+  fields C fs ->
+  NoDup (refs fs).
+Proof.
+  inversion 1; crush.
+Qed.
+
+Lemma fields_det: forall C f1 f2,
+  fields C f1 ->
+  fields C f2 ->
+  f1 = f2.
+Proof.
+  Hint Resolve fields_obj_nil.
+  intros; gen f1.
+  fields_cases (induction H0) Case; intros.
+  Case "F_Obj".
+    crush.
+  Case "F_Decl".
+    match goal with 
+    [ H: fields _ _ |- _ ] => destruct H; [crush |]
+    end.
+    match goal with
+    [ H: fields _ ?fs |- _] => specialize IHfields with fs; crush
+    end.
+Qed.
 
 Ltac class_OK C:=
   match goal with
-    | [ H: find_class C = Some (CD(CDecl _ _ _ _ _ _ _ )) |- _ ] => 
+    | [ H: find C ?CT = Some (CDecl _ _ _ _ _ _ _ ) |- _ ] => 
       apply ClassesOK in H; inversion H; subst; sort; clear H
+  end.
+
+
+Ltac mtype_OK m :=
+  match goal with
+    | [ H: find ?C _ = Some (CDecl _ _ _ _ _ ?Ms _ ), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
+      eapply methodDecl_OK in H1; eauto; inversion H1; subst; sort; clear H1
+  end.
+
+Ltac unify_returnType :=  match goal with
+  | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
+     H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
+     H2: find ?m ?Ms = Some (MDecl ?D ?m _ _ _) |- _ ] => fail 1 (*needed for no infinite loop *)
+  | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
+     H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
+     H2: find ?m ?Ms = Some (MDecl ?C0 ?m _ _ _) |- _ ] => lets ?H: unify_returnType' H H1 H2; subst
+  end.
+
+Ltac unify_fargsType :=  match goal with
+  | [H: mtype( ?m, ?C)= map fargType ?fargs ~> ?D,
+     H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
+     H2: find ?m ?Ms = Some (MDecl _ ?m ?fargs _ _) |- _ ] => fail 1
+  | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
+     H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
+     H2: find ?m ?Ms = Some (MDecl _ ?m ?fargs _ _) |- _ ] => lets ?H: unify_fargsType H H1 H2; subst
   end.
 
 Ltac insterU H :=
@@ -103,8 +146,7 @@ Ltac insterU H :=
 
 Ltac superclass_defined_or_obj C :=
   match goal with
-  | [H1: find_class C = Some (CD (CDecl _ ?D _ _ _ _ _)), H2: get_CD_feat ?D ?feat |- _ ] => 
-      edestruct super_obj_or_defined; [eexact H1 | eexact H2 | | ]; subst
+  | [H1: find C _ = _ |- _ ] => edestruct super_obj_or_defined; [eexact H1 |  | ]; subst
   end.
 
 Ltac find_dec_with T Ref L i :=
@@ -158,12 +200,12 @@ Ltac unify_find_ref :=
 Ltac Forall_find_tac :=
   let H := fresh "H" in
   match goal with
-  | [ H1: Forall ?P ?l, H2: find ?x ?l = _ |- _ ] => lets H: H1; eapply Forall_find in H; [|eexact H2]
+  | [ H1: Forall ?P ?l, H2: find ?x ?l = _ |- _ ] => lets H: H1; eapply Forall_find in H; [|eexact H2]; clear H1
   end.
 
 Ltac mtypes_ok :=
   match goal with
-  | [H: MType_OK _ _ |- _ ] => destruct H; subst; sort
+  | [H: MType_OK _ _ |- _ ] => destruct H; subst; sort; clear H
   end.
 
 Ltac elim_eqs :=
@@ -173,59 +215,29 @@ Ltac elim_eqs :=
 
 Ltac unify_override :=
   match goal with
-  | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst]
+  | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst; clear H]
   end.
 
-Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m feat,
-    find_class C = Some (CD(CDecl C D Fs noDupfs K Ms noDupMds)) ->
-    get_CD_feat D feat ->
-    mtype(m, D@feat) = Ds ~> D0 ->
+Ltac unify_fields :=
+  match goal with
+  | [ H1: fields ?C ?f1, H2: fields ?C ?f2 |- _ ] => destruct (fields_det _ _ _ H1 H2); subst; clear H2
+  end.
+
+Ltac unifall :=
+  repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs
+  || unify_find_ref || unify_override || unify_fields || unify_returnType || unify_fargsType
+  || mtypes_ok  || Forall_find_tac).
+
+Ltac ecrush := unifall; eauto; crush; eauto.
+
+Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
+    find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+    mtype(m, D) = Ds ~> D0 ->
     mtype(m, C) = Ds ~> D0.
 Proof.
-  Hint Resolve mtype_obj_False.
-  intros.
-  class_OK C. superclass_defined_or_obj C; [false; eauto | ].
-  - find_dec_tac Ms m.
-    decompose_exs. inv_decl. unify_find_ref. Forall_find_tac.
-    mtypes_ok. elim_eqs. destruct D2 as [?D] in *. unify_find_ref. unify_override.
-    eapply mty_ok; crush.
+  intros; class_OK C.
+  find_dec_tac Ms m; [ecrush; eapply mty_ok; ecrush | eapply mty_no_override; ecrush ].
 Qed.
-
-(* fields Lemmas *)
-Lemma fields_obj_nil: forall f,
-  fields Object f -> f = nil.
-Proof.
-  remember Object.
-  induction 1; crush.
-Qed.
-
-Lemma fields_NoDup : forall C fs,
-  fields C fs ->
-  NoDup (refs fs).
-Proof.
-  inversion 1; crush.
-Qed.
-
-Lemma fields_det: forall C f1 f2,
-  fields C f1 ->
-  fields C f2 ->
-  f1 = f2.
-Proof.
-  Hint Resolve fields_obj_nil.
-  intros.
-  gen f1.
-  fields_cases (induction H0) Case; intros.
-  Case "F_Obj".
-    crush.
-  Case "F_Decl".
-    match goal with 
-    [ H: fields _ _ |- _ ] => destruct H; [crush |]
-    end.
-    match goal with
-    [ H: fields _ ?fs |- _] => specialize IHfields with fs; crush
-    end.
-Qed.
-
 (* Subtype Lemmas *)
 
 Lemma obj_not_subtype: forall C,
@@ -235,7 +247,6 @@ Proof.
   remember Object. induction H0; [auto | | crush].
   subst. destruct beq_id_dec with D Object; subst; auto.
 Qed.
-
 
 Lemma subtype_fields: forall C D fs ,
   C <: D ->
@@ -248,14 +259,11 @@ Proof.
   Case "S_Refl".
     exists (@nil FieldDecl); crush.
   Case "S_Trans".
-    edestruct IHSubtype2; eauto.
-    edestruct IHSubtype1; eauto.
-    eexists ; crush; eassumption.
+    repeat match goal with
+    | [H: forall fs, fields ?C fs -> _, H1: fields ?C ?fs|- _ ] => destruct (H fs H1); clear H
+    end; ecrush.
   Case "S_Decl".
-    exists (fs); auto. eapply F_Decl; eauto.
-    apply ClassesOK in H. inversion H; subst; auto.
-    assert (fs0 = fdecl) by (apply fields_det with D; auto).
-    crush.
+    class_OK C; ecrush.
 Qed.
 
 Lemma subtype_order:
@@ -272,9 +280,7 @@ Proof.
   intros C D D0 fs noDupfs K mds noDupMds H.
   gen D0 fs noDupfs K mds noDupMds.
   induction H; [crush | intros | crush].
-  destruct beq_id_dec with C D.
-  eapply IHSubtype2; crush.
-  edestruct IHSubtype1; eauto.
+  destruct beq_id_dec with C D; ecrush.
 Qed.
 
 Lemma subtype_not_sub': forall C D E,
@@ -282,11 +288,11 @@ Lemma subtype_not_sub': forall C D E,
   E <: D ->
   C <: D \/ D <: C.
 Proof.
+  Hint Resolve super_class_subtype.
   intros C D E H. gen D.
-  induction H; auto; intros.
-  edestruct IHSubtype1; eauto.
-  destruct beq_id_dec with C D0. subst. apply S_Decl in H. auto.
-  eapply super_class_subtype in H0; eauto.
+  induction H; auto; intros. 
+  - edestruct IHSubtype1; eauto.
+  - destruct beq_id_dec with C D0; ecrush.
 Qed.
 
 Lemma subtype_not_sub: forall C D E,
@@ -295,9 +301,10 @@ Lemma subtype_not_sub: forall C D E,
   ~ D <: C ->
   ~ E <: C.
 Proof.
-  intros C D E H H0 H1 H2.
-  apply subtype_not_sub' with (D:=D) in H2; eauto.
-  destruct H2; auto.
+  intros_all.
+  match goal with
+  | [H: ?E <: ?D, H1: ?E <: ?C |- _ ] => edestruct subtype_not_sub' with (D:=D); eauto
+  end.
 Qed.
 
 (* subst Lemmas *)
@@ -329,9 +336,10 @@ Lemma weakening: forall Gamma e C,
   nil |-- e : C ->
   Gamma |-- e : C.
 Proof.
-  induction 1 using ExpTyping_ind'; eauto.
-  crush.
+  induction 1 using ExpTyping_ind'; eauto; crush.
 Qed.
+
+
 
 Lemma A14: forall D m C0 xs Ds e,
   mtype(m,C0) = Ds ~> D ->
@@ -341,21 +349,10 @@ Lemma A14: forall D m C0 xs Ds e,
 Proof.
   intros.
   mbdy_cases (induction H0) Case.
-  Case "mbdy_ok". 
-    lets: H1.
-    eapply methodDecl_OK with (C:=C) in H1; eauto. 
-    inversion H1; clear H1; sort; subst.
-    exists C E0. split; auto.  clear H11.
-    erewrite unify_returnType with (D := D) (C0 := C0); eauto.
-    split. assumption.
-    erewrite unify_fargsType with (Ds := Ds) (fargs := fargs); eauto.
-
+  mtype_OK m. exists C E0. unifall; eauto.
   Case "mbdy_no_override".
-    inversion H; [crush|]. 
-    assert (D1 = D0) by crush; subst.
-    eapply IHm_body in H5.
-    destruct H5 as (C1 & E0 & ?H & ?H & ?H).
-    exists C1 E0; eauto.
+    inversion H; ecrush.
+    exists x x0; ecrush.
 Qed.
 
 
@@ -370,7 +367,7 @@ Proof with eauto.
   intros.
   typing_cases (induction H using ExpTyping_ind') Case; sort.
   Case "T_Var".
-    destruct (In_dec (beq_id_dec) x xs) as [xIn|xNIn].
+    destruct (In_dec (beq_id_dec) x xs) as [xIn|xNIn]; unifall; eauto.
     SCase "In x xs". rename C into Bi.
       assert (In x xs); eauto.
       apply nth_error_In' in xIn as [i]. symmetry in H3.
