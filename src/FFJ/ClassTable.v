@@ -225,15 +225,19 @@ Proof.
   intros. apply find_ref_inv in H. auto.
 Qed.
 
-Lemma succ_same_ref : forall R C,
-  succ (inl C) R ->
-  ref R = C.
+Lemma succ_same_ref: forall Cl R,
+  succ Cl R ->
+  ref Cl = ref R.
 Proof.
-  induction 1.
-Admitted.
+  destruct 1; crush.
+Qed.
 
-Lemma refinement_same_ref : forall R C,
-  (inl C) <<: R ->
-  ref R = C.
+Lemma refinement_same_ref : forall R Cl,
+  Cl <<: R ->
+  ref R = ref Cl.
 Proof.
-Admitted.
+  destruct 1; 
+  repeat match goal with
+  | H: succ ?C ?R |- _ => apply succ_same_ref in H
+  end; crush.
+Qed. 

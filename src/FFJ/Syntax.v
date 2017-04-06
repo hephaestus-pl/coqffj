@@ -141,6 +141,14 @@ Instance CRefinementRef : Referable ClassRefinement :={
    | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
 }.
 
+Instance CRefinementOrCName: Referable (ClassName + RefinementName):={
+  ref Cl :=
+  match Cl with
+  | inl C => C
+  | inr R => ref R
+  end
+}.
+
 Definition feature (R: ClassRefinement) := 
   match R with
   | CRefine (RName _ feat) _ _ _ _ _ _ _ => feat
