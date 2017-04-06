@@ -45,7 +45,8 @@ Lemma exists_mbody: forall C D Cs m,
   exists xs e, mbody(m, C) = xs o e /\ NoDup (this :: xs) /\ length Cs = length xs.
 Proof.
   induction 1; eauto.
-  - exists (refs fargs) e; repeat (split; eauto); crush.
+  - exists (refs fargs) e; repeat (split; eauto); crush. Print m_body.
+    eapply mbody_ok; eauto.
   - crush; eexists; eauto.
 Qed.
 

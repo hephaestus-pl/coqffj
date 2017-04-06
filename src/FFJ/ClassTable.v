@@ -151,17 +151,17 @@ Tactic Notation "mtype_cases" tactic(first) ident(c) :=
 
 Reserved Notation "'mbody_r(' m ',' R ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop :=
-  | mbdyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
+  | mbodyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody_r(m, R) = xs o e
-  | mbdyr_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
+  | mbodyr_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody_r(m, R) = xs o e
-  | mbdyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+  | mbodyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               pred R (inr S) ->
@@ -172,19 +172,19 @@ Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop
 
 Reserved Notation "'mbody(' m ',' D ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
-  | mbdy_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
+  | mbody_ok : forall D Fs K Ms noDupfs noDupMds C0 fargs noDupfargs,
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = Some (MDecl C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
               (forall S xs' e', (inl C) <<: S -> ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, C) = xs o e
-  | mbdy_no_override: forall D Fs K Ms noDupfs noDupMds,
+  | mbody_no_override: forall D Fs K Ms noDupfs noDupMds,
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = None ->
               (forall S xs' e', (inl C) <<: S -> ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, D) = xs o e ->
               mbody(m, C) = xs o e
-  | mbdy_last : forall S,
+  | mbody_last : forall S,
               (inl C) <<: S -> 
               last (inr S) ->
               mbody_r(m, S) = xs o e ->
