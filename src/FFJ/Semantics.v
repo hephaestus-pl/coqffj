@@ -175,10 +175,8 @@ Module CTSanity.
 Hypothesis obj_notin_dom: find Object CT = None.
 Hint Rewrite obj_notin_dom.
 
-Hypothesis sub_inCT_inv: forall C D,
-  C <: D ->
-  C <> Object ->
-  exists D' Fs noDupfs K Ms noDupMds, find C CT = Some (CDecl C D' Fs noDupfs K Ms noDupMds).
+Hypothesis dec_subtype: forall C D,
+  decidable (Subtype C D).
 
 Hypothesis antisym_subtype:
   antisymmetric _ Subtype.
@@ -211,13 +209,6 @@ Proof.
   induction H; crush.
 Qed.
 
-Lemma dec_subtype: forall C D,
-  decidable (Subtype C D).
-Proof.
-  intros. unfold decidable.
-  destruct beq_id_dec with C D. subst; eauto.
-  destruct beq_id_dec with C Object. subst. right; apply sub_not_obj;auto.
-Admitted.
 
 End CTSanity.
 
