@@ -106,7 +106,7 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"| Case_aux c "F_Decl_NoRefine"].
 
 
-Reserved Notation "'mtype_r(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
+Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=
   | mtyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
@@ -119,8 +119,8 @@ Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: Cla
               succ (inr R) S ->
               mtype_r(m, S) = Bs ~> B ->
               mtype_r(m, R) = Bs ~> B
-  where "'mtype_r(' m ',' D ')' '=' cs '~>' c0"
-        := (mtype_refinement m D cs c0).
+  where "'mtype_r(' m ',' R ')' '=' cs '~>' c0"
+        := (mtype_refinement m R cs c0).
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
@@ -144,57 +144,26 @@ Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:
   where "'mtype(' m ',' D ')' '=' cs '~>' c0"
         := (m_type m D cs c0).
 
-Inductive methodRefine_in_succs (m: id) (C: ClassReference) : Prop :=
-  | MR_in_succ : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines B fargs noDupfargs e,
-              succ C S ->
-              find_class S = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-              find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
-              methodRefine_in_succs m C
-  | MR_notin_succ: forall S SS fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              succ C S ->
-              find_class S = Some (CR (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-              find m mRefines = None ->
-              succ S SS ->
-              methodRefine_in_succs m SS ->
-              methodRefine_in_succs m C.
-
-
-Definition method_in_succs (m: id) (C: ClassReference)  := methodDecl_in_succs m C /\ methodRefine_in_succs m C.
-*)
-
-
 Tactic Notation "mtype_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "mty_ok"                  | Case_aux c "mty_no_override"
-  | Case_aux c "mty_no_override_no_succ" | Case_aux c "mty_refine"
-  | Case_aux c "mty_succ" ].
+  [ Case_aux c "mty_ok"         | Case_aux c "mty_no_override"
+  | Case_aux c "mty_refinement" ].
 
-
-Reserved Notation "'rmtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
-Inductive rm_type (m: id) (C: ClassReference) (Bs: [ClassName]) (B: ClassName) : Prop:=
-  | rmty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
-              find_class C = Some (CD (CDecl C D Fs noDupfs K Ms noDupMds)) ->
-              find m Ms = Some (MDecl B m fargs noDupfargs e) ->
-              map fargType fargs = Bs ->
-              rmtype(m, C) = Bs ~> B
-  | rmty_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms fargs noDupfargs e,
-              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-              find m Ms = Some (MDecl B m fargs noDupfargs e) ->
-              map fargType fargs = Bs ->
-              rmtype(m, C) = Bs ~> B
-  | rmty_no_extd: forall P fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Ms,
-              find_class C = Some (CR (CRefine C fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines)) ->
-              find m Ms = None ->
-              pred C P ->
-              rmtype(m, P) = Bs ~> B ->
-              rmtype(m, C) = Bs ~> B
-  where "'rmtype(' m ',' D ')' '=' cs '~>' c0"
-        := (rm_type m D cs c0).
-
-Tactic Notation "mtype_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "rmty_ok" | Case_aux c "rmty_refine"
-  | Case_aux c "rmty_no_extd" ].
+Reserved Notation "'mbody_r(' m ',' R ')' '=' xs 'o' e" (at level 40, xs at next level).
+Inductive mtype_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop :=
+  | mtyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
+              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
+              refs fargs = xs ->
+              mbody_r(m, R) = Bs ~> B
+  | mtyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find m mDecls = None ->
+              succ (inr R) S ->
+              mtype_r(m, S) = Bs ~> B ->
+              mtype_r(m, R) = Bs ~> B
+  where "'mtype_r(' m ',' R ')' '=' xs 'o' e"
+        := (mtype_refinement m R xs e).
 
 Reserved Notation "'mbody(' m ',' D ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive m_body (m: id) (C: ClassReference) (xs: [ClassName]) (e: Exp) : Prop:=
