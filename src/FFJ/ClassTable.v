@@ -193,23 +193,24 @@ Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
 
 Hint Constructors mbody_refinement m_body.
 
-Inductive override (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
+Inductive override (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName): Prop :=
   | C_override : 
     (forall Ds D0, mtype(m, D) = Ds ~> D0 -> (Ds = Cs /\ C0 = D0)) ->
     override m D Cs C0.
 
-(* Should I do this one in terms of method_in_succ also? 
-  I really think it should be pred here 
-*)
-Inductive introduce (m: id) (C: ClassReference): Prop :=
-  | C_introduce : forall S,
-    succ C S ->
-    (forall Ds D0, ~ mtype(m, S) = Ds ~> D0) ->
-    introduce m C.
+Inductive introduce (m: id) (R: RefinementName): Prop :=
+  | I_Refinement : forall S,
+    pred R (inr S) ->
+    (forall Ds D0, ~ mtype_r(m, S) = Ds ~> D0) ->
+    introduce m R
+  | I_Class : forall C,
+    pred R (inl C) ->
+    (forall Ds D0, ~ mtype(m, C) = Ds ~> D0) ->
+    introduce m R.
 
-Inductive extend (m: id) (D: ClassReference) (Cs: [ClassName]) (C0: ClassName): Prop :=
+Inductive extend (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName): Prop :=
   | C_extend : forall Ds D0,
-    (rmtype(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+    (mtype_r(m, D) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
     extend m D Cs C0.
 
 Lemma find_class_same_ref: forall C CDecl,
