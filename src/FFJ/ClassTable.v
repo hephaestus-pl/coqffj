@@ -32,9 +32,7 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
    succ relates a Class with its nearest refinement, 
    i.e., that have the smallest number of zeros.  
    Is it possible to encode this smallest property any nicer?
- *) Check filter.
-
-
+ *)
 Inductive succ (Cl: ClassName + RefinementName) (R: RefinementName): Prop :=
   | Class_succ : forall C feat',
     Cl = inl C ->
@@ -67,31 +65,45 @@ Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
     C <<: C'
 where "C <<: C'" := (Refinement C C').
 
-Hint Constructors succ pred Refinement.
-
+Definition last (R: ClassName + RefinementName) : Prop := forall S, ~succ R S.
+    
 Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
-  | F_Refine: forall R S C feat Rs S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-    rname = C @ feat ->
-    Succ (inr rname) S ->
-    refinements_of C = Some Rs -> 
-    find (feature S) Rs = Some (CRefine sname fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-    succ (inl C) S ->
+  | F_Refine: forall R S C feat Rs fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    R = C @ feat ->
+    succ (inr R) S ->
+    refinements_of C = Rs -> 
+    find C Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_refinement S fsuc ->
     NoDup (refs (fs ++ fsuc)) ->
-    fields_refinement rname (fs ++ fsuc).
+    fields_refinement R (fs ++ fsuc)
+  | F_Last: forall R C feat Rs fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    R = C @ feat ->
+    last (inr R) ->
+    refinements_of C = Rs -> 
+    find C Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    fields_refinement R fs.
+
+Hint Constructors succ pred Refinement.
+Hint Unfold last.
 
 Inductive fields : id -> [FieldDecl] -> Prop :=
   | F_Obj : fields Object nil
-  | F_Decl : forall C R D fs  noDupfs K mds noDupMds fs', 
+  | F_Decl : forall C S D fs fs'' noDupfs K mds noDupMds fs', 
      find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
-     succ C R ->
-     
+     succ (inl C) S ->
+     fields_refinement S fs'' ->
+     fields D fs' ->
+     NoDup (refs (fs' ++ fs ++ fs'')) ->
+     fields C (fs'++fs ++ fs'')
+  | F_Decl_NoRefine : forall C D fs noDupfs K mds noDupMds fs', 
+     find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
+     last (inl C) ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs)) ->
      fields C (fs'++fs).
 Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "F_Obj" | Case_aux c "F_Decl"].
+  [ Case_aux c "F_Obj" | Case_aux c "F_Decl"| Case_aux c "F_Decl_NoRefine"].
 
 (*
 Inductive methodDecl_in_succs (m: id) (C: ClassReference) : Prop :=

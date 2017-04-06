@@ -104,7 +104,7 @@ Inductive RefinementName: Type :=
   | RName : ClassName -> FeatureName -> RefinementName.
 
 Notation "C @ Feat" := (RName C Feat) (at level 30).
-
+Parameter ObjectRefinement : RefinementName.
 
 Instance RefinementNameReference: Referable RefinementName :={
   ref C :=
