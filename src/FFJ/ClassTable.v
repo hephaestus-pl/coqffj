@@ -209,13 +209,8 @@ Inductive introduce (m: id) (R: RefinementName): Prop :=
     introduce m R.
 
 Inductive extend (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
-  | E_Refinement : forall S Ds D0,
-    pred R (inr S) ->
-    (mtype_r(m, S) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
-    extend m R Cs C0
-  | E_Class : forall C Ds D0,
-    pred R (inl C) ->
-    (mtype(m, C) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+  | E_Refinement : forall Ds D0,
+    (mtype_r(m, R) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
     extend m R Cs C0.
 
 Lemma find_class_same_ref: forall C CD,
