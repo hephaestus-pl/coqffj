@@ -160,6 +160,13 @@ Parameter RT: [ClassRefinement].
 Definition refinements_of (C: ClassName) := 
   filter (fun R => beq_id C (ref R)) RT.
 
+Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
+  | R_Find : forall C feat Rs,
+    R = C @ feat ->
+    refinements_of C = Rs ->
+    find feat Rs = Some RDecl ->
+    find_refinement R RDecl.
+
 Lemma refinements_same_name: forall C Rs,
   refinements_of C = Rs ->
   Forall (fun R => C = (ref R)) Rs.
