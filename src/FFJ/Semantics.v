@@ -179,12 +179,11 @@ Inductive MType_CRefinement_OK : RefinementName -> MethodDecl -> Prop :=
             MType_CRefinement_OK R (MDecl C0 m fargs noDupFargs e0).
 
 Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
-  | TR_Method : forall R C D C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
+  | TR_Method : forall R C C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             R = C @ feat ->
             find_refinement R (CRefine R fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
-            override m D Cs C0 ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
             find m mRefines = Some (MRefine C0 m fargs noDupFargs e0) ->
