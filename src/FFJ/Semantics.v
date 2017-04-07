@@ -149,8 +149,10 @@ Definition normal_form {X:Type} (R: relation X) (t: X) :=
 Definition override (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName) :=
     (forall Ds D0, mtype(m, D) = Ds ~> D0 -> (Ds = Cs /\ C0 = D0)).
 
+(* We cut off introduce in this rule, because our definition of introduce only checks backwards,
+  hence no need to check on a Class Declaration *)
 Inductive MType_OK : ClassName -> MethodDecl -> Prop :=
-  | T_Method : forall S C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
+  | T_Method : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
@@ -158,7 +160,6 @@ Inductive MType_OK : ClassName -> MethodDecl -> Prop :=
             map fargType fargs = Cs ->
             refs fargs = xs ->
             find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
-            (forall Bs B, succ (inl C) S -> ~mtype_r(m, S) = Bs ~> B) ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0).
 
 Inductive MRType_OK : RefinementName -> MethodDecl -> Prop :=
