@@ -200,6 +200,18 @@ Inductive CType_OK: ClassDecl -> Prop :=
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
+Inductive CRefinementType_OK: ClassRefinement -> Prop :=
+    | T_Class : forall R P feat C Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl mRefines noDupmRefines,
+            K = KRefine C (Cfargs ++ Dfargs) (map Arg (refs Cfargs)) (zipWith Assgnmt (map (ExpFieldAccess (ExpVar this)) (refs Fs)) (map ExpVar (refs Fs))) ->
+            R = C @ feat ->
+            C <> Object ->
+            find_refinement R (CRefine C Fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+            pred (inr R) P ->
+            fields P fdecl ->
+            NoDup (refs (fdecl ++ Fs)) ->
+            Forall (MType_OK C) (Ms) ->
+            CRefinementType_OK (CRefine C Fs noDupfs K Ms noDupMds mRefines noDupmRefines).
+
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
 

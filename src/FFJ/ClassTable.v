@@ -86,7 +86,7 @@ Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
 Hint Constructors succ pred Refinement.
 Hint Unfold last.
 
-Inductive fields : id -> [FieldDecl] -> Prop :=
+Inductive fields : ClassName -> [FieldDecl] -> Prop :=
   | F_Obj : fields Object nil
   | F_Decl : forall C S D fs fs'' noDupfs K mds noDupMds fs', 
      find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
@@ -105,6 +105,18 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"| Case_aux c "F_Decl_NoRefine"].
 
+Inductive rfields : ClassName + RefinementName -> [FieldDecl] -> Prop :=
+  | RF_Decl : forall C D fs noDupfs K mds noDupMds fs',
+     find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
+     fields D fs' ->
+     NoDup (refs (fs' ++ fs)) ->
+     rfields (inl C) (fs'++fs)  
+  | RF_Refine : forall R P fs noDupfs K mds noDupMds fs' Mrs noDupMrs,
+     find_refinement R (CRefine R fs noDupfs K mds noDupMds Mrs noDupMrs) ->
+     pred R P ->
+     rfields P fs' ->
+     NoDup (refs (fs' ++ fs)) ->
+     rfields (inr R) (fs'++fs).
 
 Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=
