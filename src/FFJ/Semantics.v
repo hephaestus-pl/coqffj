@@ -162,7 +162,23 @@ Inductive MType_OK : ClassName -> MethodDecl -> Prop :=
             find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0).
 
-Inductive MRType_OK : RefinementName -> MethodDecl -> Prop :=
+(*In the paper there is no override in this rule, but if you don't need it here
+then you wouldn't need it in MType_OK also *)
+Inductive MType_CRefinement_OK : RefinementName -> MethodDecl -> Prop :=
+  | TCR_Method : forall R C D C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs fs' noDupfDecls' K' Ms' noDupMds',
+            nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
+            E0 <: C0 ->
+            R = C @ feat ->
+            find C CT = Some (CDecl C D fs' noDupfDecls' K' Ms' noDupMds') ->
+            find_refinement R (CRefine R fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
+            override m D Cs C0 ->
+            map fargType fargs = Cs ->
+            refs fargs = xs ->
+            find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
+            introduce m R ->
+            MType_CRefinement_OK R (MDecl C0 m fargs noDupFargs e0).
+
+Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
   | TR_Method : forall R C D C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
@@ -171,9 +187,10 @@ Inductive MRType_OK : RefinementName -> MethodDecl -> Prop :=
             override m D Cs C0 ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
-            find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
-            introduce m R ->
-            MRType_OK R (MDecl C0 m fargs noDupFargs e0).
+            find m mRefines = Some (MRefine C0 m fargs noDupFargs e0) ->
+            find m Ms = None ->
+            extend m R Cs C0 ->
+            MRType_OK R (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
   | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
