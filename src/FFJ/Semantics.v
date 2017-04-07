@@ -230,9 +230,14 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
   D <> Object ->
   exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
 
-Hypothesis ClassesOK: forall C D Fs noDupfs K Ms noDupMds, 
-  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-  CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
+Hypothesis ClassesOK: forall C CD, 
+  find C CT = Some CD->
+  CType_OK CD.
+Hint Resolve ClassesOK.
+
+Hypothesis ClassesRefinementOK: forall R RD, 
+  find_refinement R RD ->
+  CRType_OK RD.
 Hint Resolve ClassesOK.
 
 Lemma subtype_obj_obj: forall C,
