@@ -150,7 +150,7 @@ Definition override (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName) :=
     (forall Ds D0, mtype(m, D) = Ds ~> D0 -> (Ds = Cs /\ C0 = D0)).
 
 Inductive MType_OK : ClassName -> MethodDecl -> Prop :=
-  | T_Method : forall C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
+  | T_Method : forall S C D C0 E0 xs Cs e0 Fs noDupfs K Ms noDupMds fargs m noDupFargs,
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
@@ -158,7 +158,21 @@ Inductive MType_OK : ClassName -> MethodDecl -> Prop :=
             map fargType fargs = Cs ->
             refs fargs = xs ->
             find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
+            (forall Bs B, succ (inl C) S -> ~mtype_r(m, S) = Bs ~> B) ->
             MType_OK C (MDecl C0 m fargs noDupFargs e0).
+
+Inductive MRType_OK : RefinementName -> MethodDecl -> Prop :=
+  | TR_Method : forall R C D C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
+            nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
+            E0 <: C0 ->
+            R = C @ feat ->
+            find_refinement R (CRefine R fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
+            override m D Cs C0 ->
+            map fargType fargs = Cs ->
+            refs fargs = xs ->
+            find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
+            introduce m R ->
+            MRType_OK R (MDecl C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
   | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
