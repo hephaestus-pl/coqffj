@@ -1,6 +1,7 @@
 Require Import String.
 Require Import FFJ.Lists.
 Require Import FFJ.Base.
+
 (* This will be the notation to be similar with haskell *)
 Notation "'[' X ']'" := (list X) (at level 40).
 
@@ -106,10 +107,20 @@ Inductive RefinementName: Type :=
 Notation "C @ Feat" := (RName C Feat) (at level 30).
 Parameter ObjectRefinement : RefinementName.
 
-Instance RefinementNameReference: Referable RefinementName :={
+Class ClassNameRef (A: Set):={
+  class_name : A -> id
+}.
+
+Instance RefinementNameCName: ClassNameRef RefinementName :={
+  class_name C :=
+  match C with
+  | (RName i _) => i end
+}.
+
+Instance RefinementNameFeature: Referable RefinementName :={
   ref C :=
   match C with 
-   | (RName i _) => i end
+   | (RName _ feat) => feat end
 }.
 
 Inductive ClassDecl :=
@@ -135,26 +146,26 @@ Inductive ClassRefinement :=
     forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
  ClassRefinement.
 
-Instance CRefinementRef : Referable ClassRefinement :={
-  ref cdecl := 
-    match cdecl with 
-   | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
-}.
-
-Instance CRefinementOrCName: Referable (ClassName + RefinementName):={
-  ref Cl :=
-  match Cl with
-  | inl C => C
-  | inr R => ref R
+Instance CRefinementCName: ClassNameRef ClassRefinement :={
+  class_name CR := 
+  match CR with 
+  | (CRefine (RName cname _) _ _ _ _ _ _ _) => cname
   end
 }.
 
-Definition feature (R: ClassRefinement) := 
-  match R with
-  | CRefine (RName _ feat) _ _ _ _ _ _ _ => feat
-  end.
+Instance CRefinementFeat: Referable ClassRefinement :={
+  ref R :=
+  match R with 
+   | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
+}.
 
-Definition features := map feature.
+Instance CRefinementOrCName: ClassNameRef (ClassName + RefinementName):={
+  class_name Cl :=
+  match Cl with
+  | inl C => C
+  | inr R => class_name R
+  end
+}.
 
 Inductive Program :=
   | CProgram : forall (cDecls: [ClassDecl]), NoDup (refs cDecls) -> Exp -> Program.
@@ -165,8 +176,8 @@ Parameter CT: [ClassDecl].
 (* And a fixed Refinement Table *)
 Parameter RT: [ClassRefinement].
 
-Definition refinements_of (C: ClassName) := 
-  filter (fun R => beq_id C (ref R)) RT.
+Definition refinements_of (C: ClassName) :=
+  filter (fun R => beq_id C (class_name R)) RT.
 
 Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
   | R_Find : forall C feat Rs,
@@ -177,7 +188,7 @@ Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
 
 Lemma refinements_same_name: forall C Rs,
   refinements_of C = Rs ->
-  Forall (fun R => C = (ref R)) Rs.
+  Forall (fun R => C = (class_name R)) Rs.
 Proof.
   Hint Resolve beq_id_eq.
   intros. 

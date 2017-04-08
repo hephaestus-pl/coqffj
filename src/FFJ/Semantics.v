@@ -230,6 +230,10 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
   D <> Object ->
   exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
 
+Hypothesis succ_in_dom: forall,
+  succ Cl S ->
+  exists R, find_refinement S = Some CD.
+
 Hypothesis ClassesOK: forall C CD, 
   find C CT = Some CD->
   CType_OK CD.

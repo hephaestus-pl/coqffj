@@ -71,8 +71,6 @@ Proof.
   apply H3. apply nth_error_In with i; auto. apply find_w_S. eapply IHxs; auto.
 Qed.
 
-Section Ref.
-
 Class Referable (A: Set) :={
 ref : A -> id;
 find: id -> list A -> option A := 
@@ -84,7 +82,6 @@ find: id -> list A -> option A :=
                     else f key xs
   end in f;
 }.
-
 
 
 Lemma find_deterministic: forall `{R: Referable} d (k1: id) x1 x2,
@@ -112,9 +109,7 @@ Proof.
   rewrite not_eq_beq_id_false; auto.
 Qed.
 
-End Ref.
 
-Module Refs.
 
 Definition refs {A: Set} {R: Referable A} (x: list A) := (map ref x).
 
@@ -124,11 +119,7 @@ Lemma refs_lenght: forall  (A: Set) (R: @Referable A) xs,
 Proof. unfold refs; crush. Qed.
 Hint Rewrite refs_lenght.
 
-End Refs.
-Export Refs.
 
-
-Section Findi.
 
 Inductive findi {A: Set} {R: @Referable A} : id -> list A -> A -> Prop:=
 | find_head : forall x xs, findi (ref x) (x :: xs) (x)
@@ -192,8 +183,6 @@ Proof.
   rewrite not_eq_beq_id_false; auto. apply IHl.
   intros. intro. destruct H with x. apply find_step; auto.
 Qed.
-
-End Findi.
 
 
 Lemma find_ref_inv: forall `{R: Referable} d (k: id) x,

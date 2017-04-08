@@ -25,25 +25,17 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   [ Case_aux c "S_Refl" | Case_aux c "S_Trans" 
   | Case_aux c "S_Decl"].
 
-(* We can also fetch the next refinement in the refinement chain.
-   For this, we encode a feature by a number of zeros (n and m) on the right of a ClassName.
-   So if we have a refinement of the class C in the refinement 00 it will be encoded as
-   CRefine (C * 100) fDecls ...
-   succ relates a Class with its nearest refinement, 
-   i.e., that have the smallest number of zeros.  
-   Is it possible to encode this smallest property any nicer?
- *)
 Inductive succ (Cl: ClassName + RefinementName) (R: RefinementName): Prop :=
   | Class_succ : forall C feat',
     Cl = inl C ->
-    head (features (refinements_of C)) = Some feat' ->
+    head (refs (refinements_of C)) = Some feat' ->
     R = C @ feat' ->
     succ Cl R
   | Refine_succ : forall C Rs feat n feat',
     Cl = inr (C @ feat) ->
     refinements_of C = Rs ->
-    find_where feat (features Rs) = Some n ->
-    head (skipn (S n) (features Rs)) = Some feat' ->
+    find_where feat (refs Rs) = Some n ->
+    head (skipn (S n) (refs Rs)) = Some feat' ->
     R = C @ feat' ->
     succ Cl R.
 
@@ -237,19 +229,21 @@ Proof.
   intros. apply find_ref_inv in H. auto.
 Qed.
 
-Lemma succ_same_ref: forall Cl R,
+Lemma succ_same_cname: forall Cl R,
   succ Cl R ->
-  ref Cl = ref R.
+  class_name Cl = class_name R.
 Proof.
-  destruct 1; crush.
+  induction 1; crush. 
 Qed.
 
-Lemma refinement_same_ref : forall R Cl,
+
+
+Lemma refinement_same_cname : forall R Cl,
   Cl <<: R ->
-  ref R = ref Cl.
+  class_name R = class_name Cl.
 Proof.
   destruct 1; 
   repeat match goal with
-  | H: succ ?C ?R |- _ => apply succ_same_ref in H
+  | H: succ ?C ?R |- _ => apply succ_same_cname in H
   end; crush.
 Qed. 
