@@ -72,7 +72,7 @@ Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
     R = C @ feat ->
     succ (inr R) S ->
     refinements_of C = Rs -> 
-    find C Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find feat Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_refinement S fsuc ->
     NoDup (refs (fs ++ fsuc)) ->
     fields_refinement R (fs ++ fsuc)
@@ -80,7 +80,7 @@ Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
     R = C @ feat ->
     last (inr R) ->
     refinements_of C = Rs -> 
-    find C Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find feat Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_refinement R fs.
 
 Hint Constructors succ pred Refinement.
@@ -141,10 +141,10 @@ Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype(m, C) = Bs ~> B
-  | mty_no_override: forall S D Fs K Ms noDupfs noDupMds,
+  | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = None ->
-              (succ (inl C) S -> forall Bs' B', ~mtype_r(m, S) = Bs' ~> B') ->
+              (forall S Bs' B', succ (inl C) S -> ~mtype_r(m, S) = Bs' ~> B') ->
               mtype(m, D) = Bs ~> B ->
               mtype(m, C) = Bs ~> B
   | mty_refinement: forall D S Fs K Ms noDupfs noDupMds,
@@ -188,12 +188,12 @@ Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = Some (MDecl C0 m fargs noDupfargs e) ->
               refs fargs = xs ->
-              (forall S xs' e', (inl C) <<: S -> ~ mbody_r(m, S) = xs' o e') ->
+              (forall S xs' e', succ (inl C) S -> ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, C) = xs o e
   | mbody_no_override: forall D Fs K Ms noDupfs noDupMds,
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = None ->
-              (forall S xs' e', (inl C) <<: S -> ~ mbody_r(m, S) = xs' o e') ->
+              (forall S xs' e', succ (inl C) S -> ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, D) = xs o e ->
               mbody(m, C) = xs o e
   | mbody_last : forall S,

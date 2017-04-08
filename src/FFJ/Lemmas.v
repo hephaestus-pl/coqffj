@@ -40,15 +40,29 @@ Proof.
 Qed.
 Hint Resolve methodDecl_OK.
 
+Lemma mbody_in_succ : forall C D Fs noDupfs K Ms noDupMds m MD,
+  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  find m Ms = Some MD ->
+  (forall S xs' e', succ (inl C) S -> ~mbody_r(m, S) = xs' o e').
+Proof.
+Admitted.
+
+Lemma mbodyr_mtyper: forall m R xs e Bs B,
+  mbody_r(m, R) = xs o e ->
+  mtype_r(m, R) = Bs ~> B.
+Proof.
+Admitted.
+
 Lemma exists_mbody: forall C D Cs m,
   mtype(m, C) = Cs ~> D ->
   exists xs e, mbody(m, C) = xs o e /\ NoDup (this :: xs) /\ length Cs = length xs.
 Proof.
   induction 1; eauto.
-  - exists (refs fargs) e; repeat (split; eauto); crush. Print m_body.
-    eapply mbody_ok; eauto.
-  - crush; eexists; eauto.
-Qed.
+  - exists (refs fargs) e; repeat (split; eauto); crush.
+    eapply mbody_ok; eauto. eapply mbody_in_succ; eauto.
+  - crush; eexists; eauto. eexists. split. eapply mbody_no_override; eauto.
+    intros_all. apply H1 with S Bs B in H5; eauto. 
+Admitted.
 
 (* find C CT Lemmas *)
 
@@ -86,6 +100,27 @@ Proof.
   inversion 1; crush.
 Qed.
 
+Lemma succ_det: forall R S S',
+  succ R S ->
+  succ R S' ->
+  S = S'.
+Admitted.
+
+Lemma fields_refinement_det: forall R f1 f2,
+  fields_refinement R f1 ->
+  fields_refinement R f2 ->
+  f1 = f2.
+Proof.
+  intros. gen f1.
+  induction H0.
+  intros. inversion H5. simpl in *; subst.
+  assert (S = S0). eapply succ_det; eauto. subst.
+  inversion H6; subst. specialize IHfields_refinement with fsuc0; crush.
+  subst. inversion H6; subst. false. unfold last in *. specialize H7 with S; auto.
+  intros_all. unfold last in H0. inversion H3. specialize H0 with S. false. auto.
+  subst. crush.
+Qed.
+
 Lemma fields_det: forall C f1 f2,
   fields C f1 ->
   fields C f2 ->
@@ -98,7 +133,7 @@ Proof.
     crush.
   Case "F_Decl".
     match goal with 
-    [ H: fields _ _ |- _ ] => destruct H; [crush |]
+    [ H: fields _ _ |- _ ] => destruct H; [crush | | ]
     end.
     match goal with
     [ H: fields _ ?fs |- _] => specialize IHfields with fs; crush
@@ -237,7 +272,7 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     mtype(m, C) = Ds ~> D0.
 Proof.
   intros; class_OK C.
-  find_dec_tac Ms m; [ecrush; eapply mty_ok; ecrush | eapply mty_no_override; ecrush ].
+  find_dec_tac Ms m; [ecrush; eapply mty_ok; ecrush | eapply mty_no_override; ecrush | ].
 Qed.
 (* Subtype Lemmas *)
 
