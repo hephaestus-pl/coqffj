@@ -104,41 +104,11 @@ Lemma succ_det: forall R S S',
   succ R S ->
   succ R S' ->
   S = S'.
-Admitted.
-
-Lemma fields_refinement_det: forall R f1 f2,
-  fields_refinement R f1 ->
-  fields_refinement R f2 ->
-  f1 = f2.
 Proof.
-  intros. gen f1.
+  intros. gen S.
   induction H0.
-  intros. inversion H5. simpl in *; subst.
-  assert (S = S0). eapply succ_det; eauto. subst.
-  inversion H6; subst. specialize IHfields_refinement with fsuc0; crush.
-  subst. inversion H6; subst. false. unfold last in *. specialize H7 with S; auto.
-  intros_all. unfold last in H0. inversion H3. specialize H0 with S. false. auto.
-  subst. crush.
-Qed.
-
-Lemma fields_det: forall C f1 f2,
-  fields C f1 ->
-  fields C f2 ->
-  f1 = f2.
-Proof.
-  Hint Resolve fields_obj_nil.
-  intros; gen f1.
-  fields_cases (induction H0) Case; intros.
-  Case "F_Obj".
-    crush.
-  Case "F_Decl".
-    match goal with 
-    [ H: fields _ _ |- _ ] => destruct H; [crush | | ]
-    end.
-    match goal with
-    [ H: fields _ ?fs |- _] => specialize IHfields with fs; crush
-    end.
-Qed.
+  intros. subst. SearchAbout succ.
+Admitted.
 
 Ltac class_OK C:=
   match goal with
@@ -253,6 +223,58 @@ Ltac unify_override :=
   match goal with
   | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst; clear H]
   end.
+
+Ltac unify_succ :=
+  match goal with
+  | [H: succ ?R ?S1, H1: succ ?R ?S2 |- _ ] => assert (S1 = S2) by (apply succ_det with R; [exact H| exact H1]); subst
+  end.
+
+Ltac solve_last_succ :=
+  match goal with
+  | [H: last ?R, H1: succ ?R ?S |- _ ] => false; unfold last in H; specialize H with S; apply H in H1; exact H1
+  end.
+
+Lemma fields_refinement_det: forall R f1 f2,
+  fields_refinement R f1 ->
+  fields_refinement R f2 ->
+  f1 = f2.
+Proof.
+  intros. gen f1.
+  induction H0.
+  - intros. inversion H5. simpl in *; subst. unify_succ. 
+    inversion H6; subst. specialize IHfields_refinement with fsuc0; crush.
+    subst. inversion H6; subst. solve_last_succ.
+  - intros_all. inversion H3. solve_last_succ. subst. crush.
+Qed.
+
+
+Ltac unify_fields_refinement :=
+  match goal with
+  | [H: fields_refinement ?R ?f1, H1: fields_refinement ?R ?f2 |- _ ] => assert (f1 = f2) by (apply fields_refinement_det with R; [exact H| exact H1]); subst
+  end.
+
+
+Lemma fields_det: forall C f1 f2,
+  fields C f1 ->
+  fields C f2 ->
+  f1 = f2.
+Proof.
+  Hint Resolve fields_obj_nil fields_refinement_det.
+  intros; gen f1.
+  fields_cases (induction H0) Case; intros.
+  Case "F_Obj".
+    crush.
+  Case "F_Decl".
+    destruct H4.
+    rewrite obj_notin_dom in H; crush.
+    simpl in *; subst. elim_eqs.
+    apply IHfields in H7. subst. unify_succ. unify_fields_refinement. reflexivity.
+    solve_last_succ.
+    inversion H3. subst. crush. subst.
+    solve_last_succ.
+    subst. elim_eqs. apply IHfields in H6; subst; eauto.
+Qed.
+
 
 Ltac unify_fields :=
   match goal with
