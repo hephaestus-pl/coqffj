@@ -235,8 +235,10 @@ Lemma succ_same_cname: forall Cl R,
 Proof.
   induction 1; crush.
   destruct refinements_same_name with C; crush.
+  destruct refinements_same_name with C; eauto. inversion H2.
+  subst. apply head_In in H2. apply skipn_In in H2.
+  eapply Forall_forall in f; eauto. rewrite f. eauto.
 Qed.
-
 
 Lemma refinement_same_cname : forall R Cl,
   Cl <<: R ->
@@ -247,3 +249,4 @@ Proof.
   | H: succ ?C ?R |- _ => apply succ_same_cname in H
   end; crush.
 Qed. 
+

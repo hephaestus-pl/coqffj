@@ -237,18 +237,21 @@ Lemma succ_in_dom: forall Cl S,
   succ Cl S ->
   exists CD, find_refinement S CD.
 Proof.
-  induction 1.
   assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
   exact RT_wellformed.
-  specialize H2 with CR. destruct H2.
-  unfold refinements_of in H0.
-  apply head_In in H0. 
- SearchAbout filter. apply filter_In in H0. crush. 
-  assert (S = R). crush. subst.
-eexists; crush. eauto.
-  subst. 
-  subst.  
- lets _: RT_wellformed. apply Forall_forall in RT_wellformed.
+  induction 1.
+  unfold refinements_of in H1.
+  apply head_In in H1.
+  apply filter_In in H1. destruct H1.
+  specialize H with CR. apply H in H1. inversion H1.
+  assert (S = R) by crush. subst.
+  eexists; crush; eauto.
+  subst.
+  exists CR.
+  apply head_In in H3. apply skipn_In in H3. unfold refinements_of in H3.
+  apply filter_In in H3.
+  destruct H with CR; crush.
+Qed.
 
 Hypothesis ClassesOK: forall C CD, 
   find C CT = Some CD->
