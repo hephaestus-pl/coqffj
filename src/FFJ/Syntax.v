@@ -186,13 +186,12 @@ Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
     find feat Rs = Some RDecl ->
     find_refinement R RDecl.
 
-Lemma refinements_same_name: forall C Rs,
-  refinements_of C = Rs ->
-  Forall (fun R => C = (class_name R)) Rs.
+Lemma refinements_same_name: forall C,
+  Forall (fun R => C = (class_name R)) (refinements_of C).
 Proof.
   Hint Resolve beq_id_eq.
   intros. 
-  unfold refinements_of in H.
+  unfold refinements_of.
   apply Forall_forall. intros.
-  rewrite <- H in H0. apply filter_In in H0. crush.
+  apply filter_In in H. crush.
 Qed.

@@ -26,17 +26,17 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   | Case_aux c "S_Decl"].
 
 Inductive succ (Cl: ClassName + RefinementName) (R: RefinementName): Prop :=
-  | Class_succ : forall C feat',
+  | Class_succ : forall C CR,
     Cl = inl C ->
-    head (refs (refinements_of C)) = Some feat' ->
-    R = C @ feat' ->
+    head (refinements_of C) = Some CR ->
+    R = class_name CR @ ref CR ->
     succ Cl R
-  | Refine_succ : forall C Rs feat n feat',
+  | Refine_succ : forall C Rs feat n CR,
     Cl = inr (C @ feat) ->
     refinements_of C = Rs ->
     find_where feat (refs Rs) = Some n ->
-    head (skipn (S n) (refs Rs)) = Some feat' ->
-    R = C @ feat' ->
+    head (skipn (S n) Rs) = Some CR ->
+    R = class_name CR @ ref CR ->
     succ Cl R.
 
 (* pred is just the inverse of succ *)
@@ -233,9 +233,9 @@ Lemma succ_same_cname: forall Cl R,
   succ Cl R ->
   class_name Cl = class_name R.
 Proof.
-  induction 1; crush. 
+  induction 1; crush.
+  destruct refinements_same_name with C; crush.
 Qed.
-
 
 
 Lemma refinement_same_cname : forall R Cl,

@@ -230,9 +230,25 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
   D <> Object ->
   exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
 
-Hypothesis succ_in_dom: forall,
+Hypothesis RT_wellformed:
+  Forall (fun CR => CRType_OK CR) RT.
+
+Lemma succ_in_dom: forall Cl S,
   succ Cl S ->
-  exists R, find_refinement S = Some CD.
+  exists CD, find_refinement S CD.
+Proof.
+  induction 1.
+  assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
+  exact RT_wellformed.
+  specialize H2 with CR. destruct H2.
+  unfold refinements_of in H0.
+  apply head_In in H0. 
+ SearchAbout filter. apply filter_In in H0. crush. 
+  assert (S = R). crush. subst.
+eexists; crush. eauto.
+  subst. 
+  subst.  
+ lets _: RT_wellformed. apply Forall_forall in RT_wellformed.
 
 Hypothesis ClassesOK: forall C CD, 
   find C CT = Some CD->
