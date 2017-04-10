@@ -253,14 +253,23 @@ Proof.
   destruct H with CR; crush.
 Qed.
 
+Lemma ClassesRefinementOK: forall R RD, 
+  find_refinement R RD ->
+  CRType_OK RD.
+Proof.
+  intros. inversion H. subst.
+  apply find_in in H2.
+  unfold refinements_of in H2.
+  apply filter_In in H2. destruct H2.
+  assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
+  exact RT_wellformed. eapply H2; eauto.
+Qed.
+Hint Resolve ClassesRefinementOK succ_in_dom.
+
+
 Hypothesis ClassesOK: forall C CD, 
   find C CT = Some CD->
   CType_OK CD.
-Hint Resolve ClassesOK.
-
-Hypothesis ClassesRefinementOK: forall R RD, 
-  find_refinement R RD ->
-  CRType_OK RD.
 Hint Resolve ClassesOK.
 
 Lemma subtype_obj_obj: forall C,
