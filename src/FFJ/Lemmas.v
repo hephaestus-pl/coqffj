@@ -100,15 +100,6 @@ Proof.
   inversion 1; crush.
 Qed.
 
-Lemma succ_det: forall R S S',
-  succ R S ->
-  succ R S' ->
-  S = S'.
-Proof.
-  intros. gen S.
-  induction H0.
-  intros. subst. SearchAbout succ.
-Admitted.
 
 Ltac class_OK C:=
   match goal with
@@ -224,15 +215,32 @@ Ltac unify_override :=
   | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst; clear H]
   end.
 
+Ltac solve_last_succ :=
+  match goal with
+  | [H: last ?R, H1: succ ?R ?S |- _ ] => false; unfold last in H; specialize H with S; apply H in H1; exact H1
+  end.
+
+
+Lemma succ_det: forall R S S',
+  succ R S ->
+  succ R S' ->
+  S = S'.
+Proof.
+  intros. gen S.
+  induction H0.
+  intros. subst. inversion H2. subst. crush.
+  subst. crush. subst.
+  intros. inversion H. subst. crush.
+  subst. inversion H0. subst. clear H0.
+  repeat elim_eqs; crush.
+Qed.
+
+
 Ltac unify_succ :=
   match goal with
   | [H: succ ?R ?S1, H1: succ ?R ?S2 |- _ ] => assert (S1 = S2) by (apply succ_det with R; [exact H| exact H1]); subst
   end.
 
-Ltac solve_last_succ :=
-  match goal with
-  | [H: last ?R, H1: succ ?R ?S |- _ ] => false; unfold last in H; specialize H with S; apply H in H1; exact H1
-  end.
 
 Lemma fields_refinement_det: forall R f1 f2,
   fields_refinement R f1 ->
@@ -294,8 +302,11 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     mtype(m, C) = Ds ~> D0.
 Proof.
   intros; class_OK C.
-  find_dec_tac Ms m; [ecrush; eapply mty_ok; ecrush | eapply mty_no_override; ecrush | ].
-Qed.
+  find_dec_tac Ms m. 
+  ecrush; eapply mty_ok; ecrush.
+  eapply mty_no_override; ecrush.
+Admitted.
+
 (* Subtype Lemmas *)
 
 Lemma obj_not_subtype: forall C,
@@ -322,7 +333,7 @@ Proof.
     end; ecrush.
   Case "S_Decl".
     class_OK C; ecrush.
-Qed.
+Admitted.
 
 Lemma subtype_order:
   order _ Subtype.
@@ -411,7 +422,7 @@ Proof.
   Case "mbdy_no_override".
     inversion H; ecrush.
     exists x x0; ecrush.
-Qed.
+Admitted.
 
 
 Theorem term_subst_preserv_typing : forall Gamma xs (Bs: list ClassName) D ds As e,

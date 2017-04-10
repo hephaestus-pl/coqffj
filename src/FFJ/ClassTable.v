@@ -250,3 +250,4 @@ Proof.
   end; crush.
 Qed. 
 
+Hint Resolve find_class_same_ref succ_same_cname refinement_same_cname.
