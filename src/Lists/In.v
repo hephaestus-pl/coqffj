@@ -23,3 +23,13 @@ Proof.
   intros x l.
   induction l; crush.
 Qed. 
+
+Lemma skipn_In: forall {A: Type} l (x: A) n,
+  In x (skipn n l) ->
+  In x l.
+Proof.
+  intros. gen n x.
+  induction l; crush. case n in *; crush.
+  destruct n; crush.
+  specialize IHl with n x; crush.
+Qed.
