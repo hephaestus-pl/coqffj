@@ -319,7 +319,22 @@ Qed.
 
 Lemma succ_dec: forall R,
   {exists S, succ R S} + {last R}.
-Admitted.
+Proof.
+  assert (forall A f (l: [A]), {x:A | f l = Some x} + {f l = None}).
+  intros. destruct (f l); ecrush.
+  destruct R as [C | R].
+  lets ?H: X (@head ClassRefinement) (refinements_of C). destruct H; decompose_exs. destruct s as [CR].
+  left. exists (class_name CR @ ref CR); eauto.
+  right. intros_all. inversion H; ecrush.
+  destruct R as [C feat].
+  lets ?H: X (find_where feat) (refs (refinements_of C)).
+  destruct H. destruct s as [n].
+  lets ?H: X (@head ClassRefinement) (skipn (S n) (refinements_of C)).
+  destruct H. destruct s as [CR]. left. exists (class_name CR @ ref CR); eauto.
+  right. intros_all. destruct H; ecrush. inversion H; ecrush.
+  right; intros_all. destruct H; ecrush.
+Qed.
+
 
 Lemma succ_fields: forall R S,
   succ R S ->
