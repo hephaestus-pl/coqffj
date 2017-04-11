@@ -20,7 +20,7 @@ Proof with eauto.
     inversion H2; subst. simpl in *. destruct Fi in *. simpl in *. subst. 
     rename C1 into D0. sort. assert (C = D0). inversion H5. reflexivity. subst.
     rewrite (fields_det D0 fs Fs) in H7 by auto.
-    clear H6 fs. assert ((FDecl c0 i0) = (FDecl c i0)).
+    clear H6 fs. assert ((FDecl c0 n) = (FDecl c n)).
     eapply ref_noDup_nth_error; eauto.  eapply fields_NoDup; eauto. inversion H3.
     inversion H5. subst. sort.
     rewrite (fields_det D0 Fs fs) in H0 by auto.

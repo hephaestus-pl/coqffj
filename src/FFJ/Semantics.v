@@ -198,6 +198,7 @@ Inductive CType_OK: ClassDecl -> Prop :=
             NoDup (refs (fdecl ++ Fs)) ->
             Forall (MType_OK C) (Ms) ->
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+            (forall S fs', succ (inl C) S -> fields_refinement S fs' -> NoDup (refs (fdecl ++ Fs ++ fs'))) ->
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
 Inductive CRType_OK: ClassRefinement -> Prop :=

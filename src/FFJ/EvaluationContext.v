@@ -1,7 +1,7 @@
 Require Import FFJ.Base.
 Require Import FFJ.Syntax.
 Require Import FFJ.ClassTable.
-Require Import FfJ.Semantics.
+Require Import FFJ.Semantics.
 Require Import FFJ.Lemmas.
 
 (* 

@@ -317,6 +317,15 @@ Proof.
   subst. destruct beq_id_dec with D Object; subst; auto.
 Qed.
 
+Lemma succ_dec: forall R,
+  {exists S, succ R S} + {last R}.
+Admitted.
+
+Lemma succ_fields: forall R S,
+  succ R S ->
+  exists fs, fields_refinement S fs.
+Admitted.
+
 Lemma subtype_fields: forall C D fs ,
   C <: D ->
   fields D fs ->
@@ -332,8 +341,12 @@ Proof.
     | [H: forall fs, fields ?C fs -> _, H1: fields ?C ?fs|- _ ] => destruct (H fs H1); clear H
     end; ecrush.
   Case "S_Decl".
-    class_OK C; ecrush.
-Admitted.
+    lets ?H: succ_dec. specialize H1 with (inl C).
+    destruct H1.  decompose_exs. lets ?H: e. apply succ_fields in e. decompose_exs.
+    exists (fs ++ fs1). eapply F_Decl; eauto.
+    class_OK C. specialize H12 with S fs1. ecrush.
+    class_OK C. exists fs. eapply F_Decl_NoRefine; ecrush.
+Qed.
 
 Lemma subtype_order:
   order _ Subtype.
