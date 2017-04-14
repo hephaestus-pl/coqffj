@@ -60,19 +60,15 @@ where "C <<: C'" := (Refinement C C').
 Definition last (R: ClassName + RefinementName) : Prop := forall S, ~succ R S.
     
 Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
-  | F_Refine: forall R S C feat Rs fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-    R = C @ feat ->
+  | F_Refine: forall R S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     succ (inr R) S ->
-    refinements_of C = Rs -> 
-    find feat Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_refinement S fsuc ->
     NoDup (refs (fs ++ fsuc)) ->
     fields_refinement R (fs ++ fsuc)
-  | F_Last: forall R C feat Rs fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-    R = C @ feat ->
+  | F_Last: forall R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     last (inr R) ->
-    refinements_of C = Rs -> 
-    find feat Rs = Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_refinement R fs.
 
 Hint Constructors succ pred Refinement.

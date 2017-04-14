@@ -235,10 +235,25 @@ Proof.
   repeat elim_eqs; crush.
 Qed.
 
+Lemma find_refinement_det: forall R RD1 RD2,
+  find_refinement R RD1 ->
+  find_refinement R RD2 ->
+  RD1 = RD2.
+Proof.
+  intros. gen RD2.
+  induction H. subst.
+  intros. inversion H0. inversion H; subst.
+  rewrite H3 in H1; crush.
+Qed.
 
 Ltac unify_succ :=
   match goal with
   | [H: succ ?R ?S1, H1: succ ?R ?S2 |- _ ] => assert (S1 = S2) by (apply succ_det with R; [exact H| exact H1]); subst
+  end.
+
+Ltac unify_find_refinement :=
+  match goal with
+  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => assert (RD1 = RD2) by (eapply find_refinement_det with R; [eexact H| eexact H1]); subst
   end.
 
 
@@ -249,10 +264,10 @@ Lemma fields_refinement_det: forall R f1 f2,
 Proof.
   intros. gen f1.
   induction H0.
-  - intros. inversion H5. simpl in *; subst. unify_succ. 
-    inversion H6; subst. specialize IHfields_refinement with fsuc0; crush.
-    subst. inversion H6; subst. solve_last_succ.
-  - intros_all. inversion H3. solve_last_succ. subst. crush.
+  - intros. inversion H3. simpl in *; subst. unify_succ. unify_find_refinement.
+    specialize IHfields_refinement with fsuc0; crush.
+    subst. solve_last_succ.
+  - intros_all. inversion H1. solve_last_succ. subst. unify_find_refinement; crush.
 Qed.
 
 
@@ -345,7 +360,6 @@ Proof. Check (@inr ClassName ClassName).
   lets ?H: H2.
   apply ClassesRefinementOK in H2. destruct H2. exists (fdecl ++ Fs); unifall. subst.
   
-  remember 
 Admitted.
 
 Lemma subtype_fields: forall C D fs ,
