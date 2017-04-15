@@ -202,16 +202,14 @@ Inductive CType_OK: ClassDecl -> Prop :=
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
 Inductive CRType_OK: ClassRefinement -> Prop :=
-    | TR_Class : forall R P feat C Fs noDupfs K Ms noDupMds fdecl mRefines noDupmRefines,
-            R = C @ feat ->
-            C <> Object ->
-            find_refinement R (CRefine R Fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
-            pred R P ->
-            rfields P fdecl ->
-            NoDup (refs (fdecl ++ Fs)) ->
-            Forall (MType_OK C) (Ms) ->
+    | TR_Class : forall R S fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
+            find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+            succ (inr R) S ->
+            fields_refinement S fs' ->
+            NoDup (refs (fs ++ fs')) ->
+            Forall (MType_OK (class_name R)) Ms ->
             Forall (MRType_OK R) (mRefines) ->
-            CRType_OK (CRefine R Fs noDupfs K Ms noDupMds mRefines noDupmRefines).
+            CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
@@ -244,14 +242,13 @@ Proof.
   unfold refinements_of in H1.
   apply head_In in H1.
   apply filter_In in H1. destruct H1.
-  specialize H with CR. apply H in H1. inversion H1.
-  assert (S = R) by crush. subst.
-  eexists; crush; eauto.
+  specialize H with CR. apply H in H1. inversion H1. subst; sort.
+  eexists; crush; eauto. destruct R. eauto.
   subst.
   exists CR.
   apply head_In in H3. apply skipn_In in H3. unfold refinements_of in H3.
   apply filter_In in H3.
-  destruct H with CR; crush.
+  destruct H with CR; crush. destruct R; eauto.
 Qed.
 
 Lemma ClassesRefinementOK: forall R RD, 

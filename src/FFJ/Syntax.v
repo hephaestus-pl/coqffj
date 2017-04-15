@@ -195,3 +195,16 @@ Proof.
   apply Forall_forall. intros.
   apply filter_In in H. crush.
 Qed.
+
+Lemma find_refinement_same_refinement: forall R CR, 
+  find_refinement R CR ->
+  class_name R = class_name CR /\ ref R = ref CR.
+Proof.
+  induction 1. subst. 
+  lets ?H: refinements_same_name C. 
+destruct CR as [r]; destruct r; simpl in *.
+  rewrite Forall_forall in H.
+  specialize H with (CRefine (c0 @ f) fDecls n c mDecls n0 mRefines n1).
+  split. apply find_in in H1. apply H in H1. auto.
+  SearchAbout find ref. apply find_ref_inv in H1. eauto.
+Qed.

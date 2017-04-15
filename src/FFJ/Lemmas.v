@@ -354,13 +354,13 @@ Qed.
 Lemma succ_fields: forall R S,
   succ R S ->
   exists fs, fields_refinement S fs.
-Proof. Check (@inr ClassName ClassName).
-  induction 1. destruct succ_dec with (R:= @inr ClassName RefinementName S).
-  destruct e as [S']. lets ?H: H2. apply succ_in_dom in H2. decompose_exs.
-  lets ?H: H2.
-  apply ClassesRefinementOK in H2. destruct H2. exists (fdecl ++ Fs); unifall. subst.
-  
-Admitted.
+Proof.
+  intros. lets ?H: H. apply succ_in_dom in H. decompose_exs. destruct CD. 
+  assert (S = r).  destruct S; destruct r. edestruct find_refinement_same_refinement; eauto.
+  apply ClassesRefinementOK in H.
+  inversion H. subst.
+  eexists. econstructor; eauto.
+Qed.
 
 Lemma subtype_fields: forall C D fs ,
   C <: D ->
