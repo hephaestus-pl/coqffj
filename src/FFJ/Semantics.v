@@ -239,15 +239,15 @@ Proof.
   assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
   exact RT_wellformed.
   induction 1.
-  unfold refinements_of in H1.
-  apply head_In in H1.
-  apply filter_In in H1. destruct H1.
-  specialize H with CR. apply H in H1. inversion H1. subst; sort.
+  unfold refinements_of in H0.
+  apply head_In in H0.
+  apply filter_In in H0. destruct H0.
+  specialize H with CR. apply H in H0. inversion H0. subst; sort.
   eexists; crush; eauto. destruct R. eauto.
   subst.
   exists CR.
-  apply head_In in H3. apply skipn_In in H3. unfold refinements_of in H3.
-  apply filter_In in H3.
+  apply nth_error_In in H2. unfold refinements_of in H2.
+  apply filter_In in H2.
   destruct H with CR; crush. destruct R; eauto.
 Qed.
 

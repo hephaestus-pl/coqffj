@@ -228,11 +228,9 @@ Lemma succ_det: forall R S S',
 Proof.
   intros. gen S.
   induction H0.
-  intros. subst. inversion H2. subst. crush.
+  intros. subst. inversion H0. subst. crush.
   subst. crush. subst.
   intros. inversion H. subst. crush.
-  subst. inversion H0. subst. clear H0.
-  repeat elim_eqs; crush.
 Qed.
 
 Lemma find_refinement_det: forall R RD1 RD2,
@@ -343,11 +341,11 @@ Proof.
   right. intros_all. inversion H; ecrush.
   destruct R as [C feat].
   lets ?H: X (find_where feat) (refs (refinements_of C)).
-  destruct H. destruct s as [n].
-  lets ?H: X (@head ClassRefinement) (skipn (S n) (refinements_of C)).
-  destruct H. destruct s as [CR]. left. exists (class_name CR @ ref CR); eauto.
-  right. intros_all. destruct H; ecrush. inversion H; ecrush.
-  right; intros_all. destruct H; ecrush.
+  destruct H. destruct s as [n]. Check nth_error. 
+  destruct X with (f:= fun (l: [ClassRefinement]) => nth_error l (S n)) (l:= refinements_of C).
+  destruct s as [CR]. left. exists (class_name CR @ ref CR); eauto.
+  right. intros_all. inversion H; ecrush.
+  right; intros_all. inversion H; ecrush.
 Qed.
 
 
