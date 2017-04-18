@@ -206,5 +206,5 @@ destruct CR as [r]; destruct r; simpl in *.
   rewrite Forall_forall in H.
   specialize H with (CRefine (c0 @ f) fDecls n c mDecls n0 mRefines n1).
   split. apply find_in in H1. apply H in H1. auto.
-  SearchAbout find ref. apply find_ref_inv in H1. eauto.
+  apply find_ref_inv in H1. eauto.
 Qed.
