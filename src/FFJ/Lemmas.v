@@ -381,10 +381,16 @@ Proof.
     | [H: forall fs, fields ?C fs -> _, H1: fields ?C ?fs|- _ ] => destruct (H fs H1); clear H
     end; ecrush.
   Case "S_Decl".
+  assert (forall A f, {x:A | f = Some x} + {f = None}).
+  intros. destruct f; ecrush.
+  destruct X with (f:= last_refinement C). Print List.
+    destruct 
     lets ?H: succ_dec. specialize H1 with (inl C).
     destruct H1.  decompose_exs. lets ?H: e. apply succ_fields in e. decompose_exs.
-    exists (fs ++ fs1). eapply F_Decl; eauto.
-    class_OK C. specialize H12 with S fs1. ecrush.
+    exists (fs ++ fs1).
+    class_OK C.
+ eapply F_Decl; ecrush.
+    class_OK C. ecrush.
     class_OK C. exists fs. eapply F_Decl_NoRefine; ecrush.
 Qed.
 

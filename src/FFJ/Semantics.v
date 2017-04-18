@@ -192,13 +192,15 @@ Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
             MRType_OK R (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
-  | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
+  | T_Class : forall C D S fs' Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
             K = KDecl C (Cfargs ++ Dfargs) (map Arg (refs Cfargs)) (zipWith Assgnmt (map (ExpFieldAccess (ExpVar this)) (refs Fs)) (map ExpVar (refs Fs))) ->
             fields D fdecl ->
             NoDup (refs (fdecl ++ Fs)) ->
             Forall (MType_OK C) (Ms) ->
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-            (forall S fs', succ (inl C) S -> fields_refinement S fs' -> NoDup (refs (fdecl ++ Fs ++ fs'))) ->
+            last_refinement C = Some S -> 
+            fields_refinement S fs' ->
+            NoDup (refs (fdecl ++ Fs ++ fs')) ->
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
 Inductive CRType_OK: ClassRefinement -> Prop :=

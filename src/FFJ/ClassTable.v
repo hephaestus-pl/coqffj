@@ -54,15 +54,15 @@ Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
 where "C <<: C'" := (Refinement C C').
 
 Definition last_refinement (C: ClassName): option RefinementName :=
-  match head (rev (refinements_of C)) with
+  match last_error (refinements_of C) with
   | Some R => Some (class_name R @ ref R)
   | NOne => None
   end.
 
-Definition last (R: ClassName + RefinementName) : Prop := forall S, ~succ R S.
+Definition no_suc (R: ClassName + RefinementName) : Prop := forall S, ~succ R S.
 
-Lemma last_ref_last: forall C R,
-  last_refinement C = Some R <-> last (inr (class_name R @ ref R)).
+Lemma last_refinement_correct: forall C R,
+  last_refinement C = Some R <-> no_suc (inr (class_name R @ ref R)).
 Proof. (* Need to impose that there are no duplicated features *)
 Admitted.
 
@@ -194,7 +194,7 @@ Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
               mbody(m, C) = xs o e
   | mbody_last : forall S,
               (inl C) <<: S -> 
-              last (inr S) ->
+              no_suc (inr S) ->
               mbody_r(m, S) = xs o e ->
               mbody(m, C) = xs o e
   where "'mbody(' m ',' D ')' '=' xs 'o' e" := (m_body m D xs e).

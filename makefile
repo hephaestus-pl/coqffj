@@ -111,6 +111,7 @@ VFILES:=src/Base.v\
   src/Lists/Forall2.v\
   src/Lists/In.v\
   src/Lists/Nth_error.v\
+  src/Lists/Last_error.v\
   src/Lists/ZipWith.v\
   src/Tactics/Crush.v\
   src/Tactics/LibTactics.v\
