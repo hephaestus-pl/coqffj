@@ -53,17 +53,29 @@ Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
     C <<: C'
 where "C <<: C'" := (Refinement C C').
 
+Definition last_refinement (C: ClassName): option RefinementName :=
+  match head (rev (refinements_of C)) with
+  | Some R => Some (class_name R @ ref R)
+  | NOne => None
+  end.
+
 Definition last (R: ClassName + RefinementName) : Prop := forall S, ~succ R S.
-    
+
+Lemma last_ref_last: forall C R,
+  last_refinement C = Some R <-> last (inr (class_name R @ ref R)).
+Proof. (* Need to impose that there are no duplicated features *)
+Admitted.
+
+
 Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
-  | F_Refine: forall R S fs fsuc noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-    succ (inr R) S ->
+  | F_Refine: forall R S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    pred R (inr S) ->
     find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-    fields_refinement S fsuc ->
-    NoDup (refs (fs ++ fsuc)) ->
-    fields_refinement R (fs ++ fsuc)
-  | F_Last: forall R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-    last (inr R) ->
+    fields_refinement S fpred ->
+    NoDup (refs (fpred ++ fs)) ->
+    fields_refinement R (fpred ++ fs)
+  | F_First: forall C R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    pred R (inl C) ->
     find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_refinement R fs.
 
@@ -74,17 +86,17 @@ Inductive fields : ClassName -> [FieldDecl] -> Prop :=
   | F_Obj : fields Object nil
   | F_Decl : forall C S D fs fs'' noDupfs K mds noDupMds fs', 
      find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
-     succ (inl C) S ->
+     last_refinement C = Some S ->
      fields_refinement S fs'' ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs ++ fs'')) ->
-     fields C (fs'++fs ++ fs'')
+     fields C (fs' ++ fs ++ fs'')
   | F_Decl_NoRefine : forall C D fs noDupfs K mds noDupMds fs', 
      find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
-     last (inl C) ->
+     last_refinement C = None ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs)) ->
-     fields C (fs'++fs).
+     fields C (fs' ++ fs).
 Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"| Case_aux c "F_Decl_NoRefine"].

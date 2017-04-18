@@ -348,6 +348,12 @@ Proof.
   right; intros_all. inversion H; ecrush.
 Qed.
 
+Lemma succ_refinemenet_field: forall R S fs,
+  succ (inr R) S ->
+  fields_refinement S fs ->
+  exists fs', NoDup (fs' ++ fs) -> fields_refinement R (fs' ++ fs).
+Proof.
+Admitted.
 
 Lemma succ_fields: forall R S,
   succ R S ->
