@@ -350,15 +350,31 @@ Proof.
   right; intros_all. destruct H; ecrush.
 Qed.
 
+Lemma succ_refinemenet_field: forall R S fs,
+  succ (inr R) S ->
+  fields_refinement S fs ->
+  exists fs', NoDup (fs' ++ fs) -> fields_refinement R (fs' ++ fs).
+Proof.
+Admitted.
 
 Lemma succ_fields: forall R S,
   succ R S ->
   exists fs, fields_refinement S fs.
 Proof. Check (@inr ClassName ClassName).
-  induction 1. destruct succ_dec with (R:= @inr ClassName RefinementName S).
+  intros. SearchAbout succ. apply succ_in_dom in H. decompose_exs.
+  induction H. subst.
+  induction 1. subst.
+  admit. subst.
+ 
+  destruct succ_dec with (R:= @inr ClassName RefinementName S).
   destruct e as [S']. lets ?H: H2. apply succ_in_dom in H2. decompose_exs.
   lets ?H: H2.
-  apply ClassesRefinementOK in H2. destruct H2. exists (fdecl ++ Fs); unifall. subst.
+  apply ClassesRefinementOK in H2. destruct H2.
+  subst. evar (fs': [FieldDecl]). pose (Hx := fields_refinement S' fs').
+ exists (fdecl ++ fs'); unifall. subst.
+  eapply F_Refine; eauto.
+  Print fields_refinement. sort. assert (S' = C0 @ feat) by admit. subst.
+  eapply F_Refine. eauto.
   
 Admitted.
 
