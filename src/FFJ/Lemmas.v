@@ -103,7 +103,7 @@ Qed.
 
 Ltac class_OK C:=
   match goal with
-    | [ H: find C ?CT = Some (CDecl _ _ _ _ _ _ _ ) |- _ ] => 
+    | [ H: find C ?CT = Some _ |- _ ] => 
       apply ClassesOK in H; inversion H; subst; sort; clear H
   end.
 
@@ -244,6 +244,14 @@ Proof.
   rewrite H3 in H1; crush.
 Qed.
 
+Lemma find_refinement_same_name: forall R R' fs noDupfs Kr Ms noDupMs Mrs noDupMrs,
+  find_refinement R (CRefine R' fs noDupfs Kr Ms noDupMs Mrs noDupMrs) ->
+  find_refinement R (CRefine R fs noDupfs Kr Ms noDupMs Mrs noDupMrs).
+Proof.
+  intros. lets ?H: H. apply find_refinement_same_refinement in H.
+  destruct R. destruct R'. crush.
+Qed.
+
 Ltac unify_succ :=
   match goal with
   | [H: succ ?R ?S1, H1: succ ?R ?S2 |- _ ] => assert (S1 = S2) by (apply succ_det with R; [exact H| exact H1]); subst
@@ -251,7 +259,12 @@ Ltac unify_succ :=
 
 Ltac unify_find_refinement :=
   match goal with
-  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => assert (RD1 = RD2) by (eapply find_refinement_det with R; [eexact H| eexact H1]); subst
+  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => assert (RD1 = RD2) by (eapply find_refinement_det with R; [eexact H| eexact H1]); clear H1; subst
+  end.
+
+Ltac unify_find_refinement' :=
+  match goal with
+  | [H: find_refinement ?R (CRefine ?R' _ _ _ _ _ _ _) |- _ ] => apply find_refinement_same_name in H
   end.
 
 
@@ -304,7 +317,9 @@ Ltac unify_fields :=
 
 Ltac unifall :=
   repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs
-  || unify_find_ref || unify_override || unify_fields || unify_fields_refinement || unify_returnType || unify_fargsType
+  || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
+  || unify_find_refinement' || unify_find_refinement
+  || unify_returnType || unify_fargsType
   || mtypes_ok  || Forall_find_tac).
 
 Ltac ecrush := unifall; eauto; crush; eauto.
@@ -348,30 +363,18 @@ Proof.
   right; intros_all. inversion H; ecrush.
 Qed.
 
-Lemma succ_refinemenet_field: forall R S fs,
-  succ (inr R) S ->
-  fields_refinement S fs ->
-  exists fs', NoDup (fs' ++ fs) -> fields_refinement R (fs' ++ fs).
-Proof.
-Admitted.
 
-Lemma succ_fields: forall R S,
-  succ R S ->
-  exists fs, fields_refinement S fs.
-Proof.
-  intros. lets ?H: H. apply succ_in_dom in H. decompose_exs. destruct CD. 
-  assert (S = r).  destruct S; destruct r. edestruct find_refinement_same_refinement; eauto.
-  apply ClassesRefinementOK in H.
-  inversion H. subst.
-  eexists. econstructor; eauto.
-Qed.
-
-
-Lemma last_refinement_fields: forall C CR,
+Lemma last_refinement_fields: forall C CR CD,
+  find C CT = Some CD ->
   last_refinement C = Some CR ->
   exists fs, fields_refinement CR fs.
 Proof.
-Admitted.
+  intros. lets ?H: H0.
+  class_OK C. apply last_refinement_in_dom in H0. destruct H0 as [CRD].
+  destruct CRD. destruct CR.  unifall. 
+  apply ClassesRefinementOK in H. 
+  inversion H; eexists; solve [econstructor; eauto].
+Qed.
 
 Lemma subtype_fields: forall C D fs ,
   C <: D ->
@@ -391,13 +394,11 @@ Proof.
     assert (forall A f, {x:A | f = Some x} + {f = None}).
     intros. destruct f; ecrush.
     destruct X with (f:= last_refinement C). destruct s as [CR].
-    lets ?H: e. lets ?H: e.
-    apply last_refinement_fields in e. destruct e as [fs']. exists (fs ++ fs').
-    apply last_refinement_in_dom in H1. destruct H1 as [CRD].
-    class_OK C.
-    eapply F_Decl; ecrush.
-    class_OK C. exists fs.
-    eapply F_Decl_NoRefine; ecrush.
+    lets ?H: H. lets ?H: e.
+    eapply last_refinement_fields in H; eauto. destruct H as [fs'].
+    apply last_refinement_in_dom in H2. destruct H2 as [CRD].
+    class_OK C; solve [eexists; econstructor; ecrush].
+    class_OK C; solve [eexists; econstructor; ecrush].
 Qed.
 
 Lemma subtype_order:
