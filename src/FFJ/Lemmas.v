@@ -271,7 +271,7 @@ Qed.
 
 Ltac unify_fields_refinement :=
   match goal with
-  | [H: fields_refinement ?R ?f1, H1: fields_refinement ?R ?f2 |- _ ] => assert (f1 = f2) by (apply fields_refinement_det with R; [exact H| exact H1]); subst
+  | [H: fields_refinement ?R ?f1, H1: fields_refinement ?R ?f2 |- _ ] => destruct (fields_refinement_det _ _ _ H H1); clear H1; subst
   end.
 
 
@@ -304,7 +304,7 @@ Ltac unify_fields :=
 
 Ltac unifall :=
   repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs
-  || unify_find_ref || unify_override || unify_fields || unify_returnType || unify_fargsType
+  || unify_find_ref || unify_override || unify_fields || unify_fields_refinement || unify_returnType || unify_fargsType
   || mtypes_ok  || Forall_find_tac).
 
 Ltac ecrush := unifall; eauto; crush; eauto.
@@ -331,7 +331,7 @@ Proof.
 Qed.
 
 Lemma succ_dec: forall R,
-  {exists S, succ R S} + {last R}.
+  {exists S, succ R S} + {no_suc R}.
 Proof.
   assert (forall A f (l: [A]), {x:A | f l = Some x} + {f l = None}).
   intros. destruct (f l); ecrush.
@@ -366,6 +366,13 @@ Proof.
   eexists. econstructor; eauto.
 Qed.
 
+
+Lemma last_refinement_fields: forall C CR,
+  last_refinement C = Some CR ->
+  exists fs, fields_refinement CR fs.
+Proof.
+Admitted.
+
 Lemma subtype_fields: forall C D fs ,
   C <: D ->
   fields D fs ->
@@ -381,17 +388,16 @@ Proof.
     | [H: forall fs, fields ?C fs -> _, H1: fields ?C ?fs|- _ ] => destruct (H fs H1); clear H
     end; ecrush.
   Case "S_Decl".
-  assert (forall A f, {x:A | f = Some x} + {f = None}).
-  intros. destruct f; ecrush.
-  destruct X with (f:= last_refinement C). Print List.
-    destruct 
-    lets ?H: succ_dec. specialize H1 with (inl C).
-    destruct H1.  decompose_exs. lets ?H: e. apply succ_fields in e. decompose_exs.
-    exists (fs ++ fs1).
+    assert (forall A f, {x:A | f = Some x} + {f = None}).
+    intros. destruct f; ecrush.
+    destruct X with (f:= last_refinement C). destruct s as [CR].
+    lets ?H: e. lets ?H: e.
+    apply last_refinement_fields in e. destruct e as [fs']. exists (fs ++ fs').
+    apply last_refinement_in_dom in H1. destruct H1 as [CRD].
     class_OK C.
- eapply F_Decl; ecrush.
-    class_OK C. ecrush.
-    class_OK C. exists fs. eapply F_Decl_NoRefine; ecrush.
+    eapply F_Decl; ecrush.
+    class_OK C. exists fs.
+    eapply F_Decl_NoRefine; ecrush.
 Qed.
 
 Lemma subtype_order:

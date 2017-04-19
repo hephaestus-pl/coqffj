@@ -192,23 +192,32 @@ Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
             MRType_OK R (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
-  | T_Class : forall C D S fs' Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
+  | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
             K = KDecl C (Cfargs ++ Dfargs) (map Arg (refs Cfargs)) (zipWith Assgnmt (map (ExpFieldAccess (ExpVar this)) (refs Fs)) (map ExpVar (refs Fs))) ->
             fields D fdecl ->
             NoDup (refs (fdecl ++ Fs)) ->
             Forall (MType_OK C) (Ms) ->
             find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-            last_refinement C = Some S -> 
-            fields_refinement S fs' ->
-            NoDup (refs (fdecl ++ Fs ++ fs')) ->
+            (forall R fs',  last_refinement C = Some R -> 
+                            fields_refinement R fs' ->
+                            NoDup (refs (fdecl ++ Fs ++ fs'))) ->
+            NoDup (refs (fdecl ++ Fs)) ->
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
 Inductive CRType_OK: ClassRefinement -> Prop :=
-    | TR_Class : forall R S fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
+    | TR_Refinement : forall R P fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
             find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
-            succ (inr R) S ->
-            fields_refinement S fs' ->
-            NoDup (refs (fs ++ fs')) ->
+            pred R (inr P) ->
+            fields_refinement P fs' ->
+            NoDup (refs (fs' ++ fs)) ->
+            Forall (MType_OK (class_name R)) Ms ->
+            Forall (MRType_OK R) (mRefines) ->
+            CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines)
+    | TR_Class : forall R C fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
+            find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+            pred R (inl C) ->
+            fields C fs' ->
+            NoDup (refs (fs' ++ fs)) ->
             Forall (MType_OK (class_name R)) Ms ->
             Forall (MRType_OK R) (mRefines) ->
             CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
@@ -244,15 +253,20 @@ Proof.
   unfold refinements_of in H0.
   apply head_In in H0.
   apply filter_In in H0. destruct H0.
-  specialize H with CR. apply H in H0. inversion H0. subst; sort.
-  eexists; crush; eauto. destruct R. eauto.
-  subst.
-  exists CR.
+  specialize H with CR. apply H in H0. inversion H0. destruct R. simpl in *; subst; sort.
+  eexists; crush; eauto.
+  subst. destruct R; simpl in *. eexists; eauto. subst.
   apply nth_error_In in H2. unfold refinements_of in H2.
   apply filter_In in H2.
-  destruct H with CR; crush. destruct R; eauto.
+  destruct H with CR; crush; destruct R; eauto.
 Qed.
 
+Lemma last_refinement_in_dom: forall C CR,
+  last_refinement C = Some CR ->
+  exists CD, find_refinement CR CD.
+Proof.
+Admitted.
+  
 Lemma ClassesRefinementOK: forall R RD, 
   find_refinement R RD ->
   CRType_OK RD.
