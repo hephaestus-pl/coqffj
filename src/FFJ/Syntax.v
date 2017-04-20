@@ -144,7 +144,7 @@ Inductive ClassRefinement :=
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) ->
     forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
- ClassRefinement.
+    ClassRefinement.
 
 Instance CRefinementCName: ClassNameRef ClassRefinement :={
   class_name CR := 

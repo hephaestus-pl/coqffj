@@ -243,8 +243,8 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
 Hypothesis RT_wellformed:
   Forall (fun CR => CRType_OK CR) RT.
 
-Lemma succ_in_dom: forall Cl S,
-  succ Cl S ->
+Lemma pred_in_dom: forall Cl S,
+  pred S Cl ->
   exists CD, find_refinement S CD.
 Proof.
   assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
@@ -278,7 +278,7 @@ Proof.
   assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
   exact RT_wellformed. eapply H2; eauto.
 Qed.
-Hint Resolve ClassesRefinementOK succ_in_dom.
+Hint Resolve ClassesRefinementOK pred_in_dom.
 
 
 Hypothesis ClassesOK: forall C CD, 

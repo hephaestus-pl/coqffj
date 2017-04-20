@@ -167,26 +167,33 @@ Ltac decompose_exs :=
   end.
 
 Ltac inv_decl :=
-  let C := fresh "C" in
+  repeat let C := fresh "C" in
+  let feat := fresh "feat" in
+  let R := fresh "R" in
   let D := fresh "D" in
   let K := fresh "K" in
+  let Kr := fresh "Kr" in
   let m := fresh "m" in
   let f := fresh "f" in
   let fargs := fresh "fargs" in
   let noDupFargs := fresh "noDupFargs" in
-  let fDecls := fresh "fDecls" in
-  let noDupfDecls := fresh "noDupfDecls" in
-  let mDecls := fresh "mDecls" in
-  let noDupmDecls := fresh "noDupmDecls" in
-  repeat match goal with
+  let noDupfs := fresh "noDupfs" in
+  let fs := fresh "fs" in
+  let Ms := fresh "Ms" in
+  let noDupMs := fresh "noDupMs" in
+  let Mrs := fresh "Mrs" in
+  let noDupMrs := fresh "noDupMrs" in
+  match goal with
   | [ MD : MethodDecl |- _ ] => destruct MD as [C m fargs noDupFargs e]
   | [ FD : FieldDecl |- _ ] => destruct FD as [C f]
-  | [ CD : ClassDecl |- _ ] => destruct CD as [C D fDecls noDupfDecls mDecls noDupmDecls]
+  | [ CD : ClassDecl |- _ ] => destruct CD as [C D fs noDupfs K Ms noDupMs]
+  | [ CR : ClassRefinement |- _ ] => destruct CR as [R fs noDupfs Kr Ms noDupMs Mrs noDupMrs]
+  | [ R : RefinementName |- _ ] => destruct R as [C feat]
   end.
 
 Ltac unify_find_ref :=
-  let H := fresh "H" in
-  repeat match goal with
+  repeat let H := fresh "H" in
+  match goal with
   | [H1: find ?x ?xs = Some ?u |- _] => assert (ref u = x) as H; [eapply find_ref_inv; eauto|]; subst;
     repeat match goal with
       | [ H2 : context[ref u] |- _] => simpl in H2
@@ -221,17 +228,24 @@ Ltac solve_last_succ :=
   end.
 
 
-Lemma succ_det: forall R S S',
-  succ R S ->
-  succ R S' ->
-  S = S'.
+Lemma pred_det: forall R R' S,
+  pred S R ->
+  pred S R' ->
+  R = R'.
 Proof.
-  intros. gen S.
-  induction H0.
-  intros. subst. inversion H0. subst. crush.
-  subst. crush. subst.
-  intros. inversion H. subst. crush.
-Qed.
+  intros. gen R'.
+  induction H.
+  intros.
+  inversion H1.
+  inv_decl. unify_find_ref.
+  SearchAbout head In. apply head_In in H4. apply head_In in H.
+  lets ?H: refinements_same_name C1.
+  lets ?H: refinements_same_name C2.
+  rewrite Forall_forall in H2.
+  rewrite Forall_forall in H3.
+ eapply H2 in H4.  eapply H3 in H. crush.
+  inv_decl. subst; simpl in *.
+Admitted.
 
 Lemma find_refinement_det: forall R RD1 RD2,
   find_refinement R RD1 ->
