@@ -213,7 +213,7 @@ Ltac mtypes_ok :=
   end.
 
 Ltac elim_eqs :=
-  match goal with
+  repeat match goal with
   | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inversion H1; clear H1; subst
   end.
 
@@ -281,6 +281,10 @@ Ltac unify_find_refinement' :=
   | [H: find_refinement ?R (CRefine ?R' _ _ _ _ _ _ _) |- _ ] => apply find_refinement_same_name in H
   end.
 
+Ltac solve_first_pred :=
+  match goal with
+  | [H: pred ?R ?S, H1: first_refinement ?R |- _ ] => unfold first_refinement in H1; specialize H1 with S; contradiction
+  end.
 
 Lemma fields_refinement_det: forall R f1 f2,
   fields_refinement R f1 ->
@@ -291,8 +295,8 @@ Proof.
   induction H0.
   - intros. inversion H3. simpl in *; subst. unify_pred. unify_find_refinement.
     specialize IHfields_refinement with fpred0; crush.
-    subst. solve_last_succ.
-  - intros_all. inversion H1. solve_last_succ. subst. unify_find_refinement; crush.
+    subst. solve_first_pred. 
+  - intros_all. inversion H1. solve_first_pred. subst. unify_find_refinement; crush.
 Qed.
 
 
@@ -316,10 +320,10 @@ Proof.
     destruct H4.
     rewrite obj_notin_dom in H; crush.
     simpl in *; subst. elim_eqs.
-    apply IHfields in H7. subst. unify_succ. unify_fields_refinement. reflexivity.
-    solve_last_succ.
+    apply IHfields in H7. subst. unify_fields_refinement. reflexivity.
+    elim_eqs.
     inversion H3. subst. crush. subst.
-    solve_last_succ.
+    elim_eqs.
     subst. elim_eqs. apply IHfields in H6; subst; eauto.
 Qed.
 
