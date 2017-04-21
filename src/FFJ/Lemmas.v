@@ -61,7 +61,7 @@ Proof.
   - exists (refs fargs) e; repeat (split; eauto); crush.
     eapply mbody_ok; eauto. eapply mbody_in_succ; eauto.
   - crush; eexists; eauto. eexists. split. eapply mbody_no_override; eauto.
-    intros_all. apply H1 with S Bs B in H5; eauto. 
+    intros_all. apply H1 with S Bs B in H5; eauto.
 Admitted.
 
 (* find C CT Lemmas *)
@@ -237,16 +237,10 @@ Proof.
   intros. gen R'.
   induction H.
   intros.
-  inversion H1.
-  inv_decl. unify_find_ref.
-  SearchAbout head In. apply head_In in H4. apply head_In in H.
-  lets ?H: refinements_same_name C1.
-  lets ?H: refinements_same_name C2.
-  rewrite Forall_forall in H2.
-  rewrite Forall_forall in H3.
- eapply H2 in H4.  eapply H3 in H. crush.
-  inv_decl. subst; simpl in *.
-Admitted.
+  inversion H2.
+  inv_decl. unify_find_ref. subst. simpl in *. inversion H7; subst; clear H7.
+  elim_eqs; reflexivity.
+Qed.
 
 Lemma find_refinement_det: forall R RD1 RD2,
   find_refinement R RD1 ->
