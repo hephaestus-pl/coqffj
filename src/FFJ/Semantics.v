@@ -252,8 +252,7 @@ Proof.
   induction 1.
   apply nth_error_In in H2. unfold refinements_of in H0. subst.
   apply filter_In in H2.
-  destruct H with CR; crush; destruct R; eauto.
-Qed.
+Admitted.
 
 Lemma last_refinement_in_dom: forall C CR,
   last_refinement C = Some CR ->

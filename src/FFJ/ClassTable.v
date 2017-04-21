@@ -30,7 +30,7 @@ Inductive pred: RefinementName -> RefinementName -> Prop :=
     refinements_of C = Rs ->
     find_where feat (refs Rs) = Some (S n) ->
     nth_error Rs n = Some CR ->
-    pred (class_name CR @ ref CR) (C @ feat).
+    pred (C @ feat) (class_name CR @ ref CR).
 
 (* pred is just the inverse of succ
 Inductive succ (Cl: ClassName + RefinementName) (R: RefinementName): Prop :=

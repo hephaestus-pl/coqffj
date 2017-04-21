@@ -228,6 +228,7 @@ Ltac solve_last_succ :=
   end.
 *)
 
+
 Lemma pred_det: forall R R' S,
   pred S R ->
   pred S R' ->
@@ -368,14 +369,12 @@ Lemma pred_dec: forall R,
 Proof.
   assert (forall A f (l: [A]), {x:A | f l = Some x} + {f l = None}).
   intros. destruct (f l); ecrush.
-  destruct R as [C | R].
-  lets ?H: X (@head ClassRefinement) (refinements_of C). destruct H; decompose_exs. destruct s as [CR].
-  left. exists (class_name CR @ ref CR); eauto.
-  right. intros_all. inversion H; ecrush.
   destruct R as [C feat].
   lets ?H: X (find_where feat) (refs (refinements_of C)).
-  destruct H. destruct s as [n]. Check nth_error. 
-  destruct X with (f:= fun (l: [ClassRefinement]) => nth_error l (S n)) (l:= refinements_of C).
+  destruct H. destruct s as [n]. destruct n.
+  right. unfold first_refinement. intros_all. inversion H. destruct CR. destruct r. subst. simpl in *.
+  elim_eqs.
+  destruct X with (f:= fun (l: [ClassRefinement]) => nth_error l n) (l:= refinements_of C).
   destruct s as [CR]. left. exists (class_name CR @ ref CR); eauto.
   right. intros_all. inversion H; ecrush.
   right; intros_all. inversion H; ecrush.
