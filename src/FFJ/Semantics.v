@@ -207,7 +207,7 @@ Inductive CType_OK: ClassDecl -> Prop :=
 Inductive CRType_OK: ClassRefinement -> Prop :=
     | TR_Refinement : forall R P fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
             find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
-            pred R (inr P) ->
+            pred R P ->
             fields_refinement P fs' ->
             NoDup (refs (fs' ++ fs)) ->
             Forall (MType_OK (class_name R)) Ms ->
@@ -215,7 +215,7 @@ Inductive CRType_OK: ClassRefinement -> Prop :=
             CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines)
     | TR_Class : forall R C fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
             find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
-            pred R (inl C) ->
+            first_refinement R->
             fields C fs' ->
             NoDup (refs (fs' ++ fs)) ->
             Forall (MType_OK (class_name R)) Ms ->
@@ -250,13 +250,7 @@ Proof.
   assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
   exact RT_wellformed.
   induction 1.
-  unfold refinements_of in H0.
-  apply head_In in H0.
-  apply filter_In in H0. destruct H0.
-  specialize H with CR. apply H in H0. inversion H0. destruct R. simpl in *; subst; sort.
-  eexists; crush; eauto.
-  subst. destruct R; simpl in *. eexists; eauto. subst.
-  apply nth_error_In in H2. unfold refinements_of in H2.
+  apply nth_error_In in H2. unfold refinements_of in H0. subst.
   apply filter_In in H2.
   destruct H with CR; crush; destruct R; eauto.
 Qed.

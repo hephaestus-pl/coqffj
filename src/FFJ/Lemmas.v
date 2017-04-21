@@ -39,14 +39,14 @@ Proof.
   end.
 Qed.
 Hint Resolve methodDecl_OK.
-
+(*
 Lemma mbody_in_succ : forall C D Fs noDupfs K Ms noDupMds m MD,
   find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
   find m Ms = Some MD ->
   (forall S xs' e', succ (inl C) S -> ~mbody_r(m, S) = xs' o e').
 Proof.
 Admitted.
-
+*)
 Lemma mbodyr_mtyper: forall m R xs e Bs B,
   mbody_r(m, R) = xs o e ->
   mtype_r(m, R) = Bs ~> B.
@@ -221,12 +221,12 @@ Ltac unify_override :=
   match goal with
   | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst; clear H]
   end.
-
+(*
 Ltac solve_last_succ :=
   match goal with
   | [H: last ?R, H1: succ ?R ?S |- _ ] => false; unfold last in H; specialize H with S; apply H in H1; exact H1
   end.
-
+*)
 
 Lemma pred_det: forall R R' S,
   pred S R ->
@@ -266,9 +266,9 @@ Proof.
   destruct R. destruct R'. crush.
 Qed.
 
-Ltac unify_succ :=
+Ltac unify_pred :=
   match goal with
-  | [H: succ ?R ?S1, H1: succ ?R ?S2 |- _ ] => assert (S1 = S2) by (apply succ_det with R; [exact H| exact H1]); subst
+  | [H: pred ?R ?S1, H1: pred ?R ?S2 |- _ ] => assert (S1 = S2) by (apply pred_det with R; [exact H| exact H1]); clear H1; subst
   end.
 
 Ltac unify_find_refinement :=
@@ -289,8 +289,8 @@ Lemma fields_refinement_det: forall R f1 f2,
 Proof.
   intros. gen f1.
   induction H0.
-  - intros. inversion H3. simpl in *; subst. unify_succ. unify_find_refinement.
-    specialize IHfields_refinement with fsuc0; crush.
+  - intros. inversion H3. simpl in *; subst. unify_pred. unify_find_refinement.
+    specialize IHfields_refinement with fpred0; crush.
     subst. solve_last_succ.
   - intros_all. inversion H1. solve_last_succ. subst. unify_find_refinement; crush.
 Qed.
@@ -359,8 +359,8 @@ Proof.
   subst. destruct beq_id_dec with D Object; subst; auto.
 Qed.
 
-Lemma succ_dec: forall R,
-  {exists S, succ R S} + {no_suc R}.
+Lemma pred_dec: forall R,
+  {exists S, pred R S} + {first_refinement R}.
 Proof.
   assert (forall A f (l: [A]), {x:A | f l = Some x} + {f l = None}).
   intros. destruct (f l); ecrush.
