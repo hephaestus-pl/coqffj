@@ -116,14 +116,21 @@ Inductive rfields : ClassName + RefinementName -> [FieldDecl] -> Prop :=
 
 Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=
-  | mtyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
+  | mtyr_decl_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype_r(m, R) = Bs ~> B
-  | mtyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+  | mtyr_refinement_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
+              find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
+              map fargType fargs = Bs ->
+              mtype_r(m, R) = Bs ~> B
+  | mtyr_pred: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find m mDecls = None  ->
+              find m mRefines = None->
               pred R S ->
               mtype_r(m, S) = Bs ~> B ->
               mtype_r(m, R) = Bs ~> B
@@ -168,12 +175,14 @@ Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop
               mbody_r(m, R) = xs o e
   | mbodyr_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find m mDecls = None ->
               find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody_r(m, R) = xs o e
-  | mbodyr_succ: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+  | mbodyr_pred: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
+              find m mRefines = None->
               pred R S ->
               mbody_r(m, S) = xs o e ->
               mbody_r(m, R) = xs o e
@@ -196,7 +205,9 @@ Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
                                 ~ mbody_r(m, S) = xs' o e') ->
               mbody(m, D) = xs o e ->
               mbody(m, C) = xs o e
-  | mbody_last : forall S,
+  | mbody_last : forall S D Fs K Ms noDupfs noDupMds,
+              find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+              find m Ms = None ->
               last_refinement C = Some S -> 
               mbody_r(m, S) = xs o e ->
               mbody(m, C) = xs o e
@@ -207,7 +218,7 @@ Tactic Notation "mbdy_cases" tactic(first) ident(c) :=
   [ Case_aux c "mbdy_ok" | Case_aux c "mbdy_no_override"
   | Case_aux c "mbdy_last" ].
 
-Hint Constructors mbody_refinement m_body.
+Hint Constructors mbody_refinement m_body mtype_refinement m_type.
 
 Inductive override (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName): Prop :=
   | C_override : 

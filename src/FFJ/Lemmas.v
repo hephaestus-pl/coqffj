@@ -134,6 +134,9 @@ Lemma mbodyr_mtyper: forall m R xs e,
   mbody_r(m, R) = xs o e ->
   exists Bs B, mtype_r(m, R) = Bs ~> B.
 Proof.
+  induction 1.
+  - exists (map fargType fargs) B. eauto.
+  -
 Admitted.
 
 Lemma exists_mbody_r: forall C D Cs m,
@@ -142,6 +145,7 @@ Lemma exists_mbody_r: forall C D Cs m,
 Proof.
   induction 1.
   - exists (refs fargs) e. repeat (split; crush; eauto).
+  - decompose_exs. exists (refs fargs) e. repeat (split; crush; eauto).
   - decompose_exs. exists xs e. repeat (split; crush; eauto).
 Qed.
 
