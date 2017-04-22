@@ -509,6 +509,31 @@ Qed.
 
 
 
+Lemma A14': forall R D m C0 xs Ds e,
+  mtype_r(m,R) = Ds ~> D ->
+  mbody_r(m,R) = xs o e ->
+  class_name R = C0 ->
+  exists D0 C,  C0 <: D0 /\ C <: D /\
+  nil extds (this :: xs) : (D0 :: Ds) |-- e : C.
+Proof.
+  intros. induction H0.
+Admitted.
+
+Lemma last_in: forall A l (x:A),
+  last_error l = Some x ->
+  In x l.
+Proof.
+Admitted.
+
+Lemma last_refinement_same_name: forall C R, 
+  last_refinement C = Some R ->
+  class_name R = C.
+Proof.
+  intros. destruct R. simpl.
+  unfold last_refinement in H.
+Admitted.
+Hint Resolve last_refinement_same_name.
+
 Lemma A14: forall D m C0 xs Ds e,
   mtype(m,C0) = Ds ~> D ->
   mbody(m,C0) = xs o e ->
@@ -519,9 +544,14 @@ Proof.
   mbdy_cases (induction H0) Case.
   mtype_OK m. exists C E0. unifall; eauto.
   Case "mbdy_no_override".
-    inversion H; ecrush.
+    inversion H; ecrush; sort.
     exists x x0; ecrush.
-Admitted.
+    false. apply exists_mbody_r in H7. ecrush.
+  Case "mbdy_last".
+    inversion H; ecrush; sort.
+    false. apply mbodyr_mtyper in H3. ecrush.
+    eapply A14'; ecrush.
+Qed.
 
 
 Theorem term_subst_preserv_typing : forall Gamma xs (Bs: list ClassName) D ds As e,
