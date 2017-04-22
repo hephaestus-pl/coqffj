@@ -111,17 +111,7 @@ Proof.
   induction 1; crush.
 Qed.
 
-Lemma methodDecl_OK :forall C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
-  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
-  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
-  MType_OK C (MDecl C0 m fargs noDupfargs ret).
-Proof.
-  intros. apply ClassesOK in H0; inversion H0.
-  match goal with
-  [ H: Forall _ _ |- _ ] =>  eapply Forall_find in H; eauto
-  end.
-Qed.
-Hint Resolve methodDecl_OK.
+
 (*
 Lemma mbody_in_succ : forall C D Fs noDupfs K Ms noDupMds m MD,
   find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
@@ -199,13 +189,6 @@ Proof.
 Qed.
 
 (* Unification Tactics *)
-
-
-Ltac mtype_OK m :=
-  match goal with
-    | [ H: find ?C _ = Some (CDecl _ _ _ _ _ ?Ms _ ), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
-      eapply methodDecl_OK in H1; eauto; inversion H1; subst; sort; clear H1
-  end.
 
 Ltac unify_returnType :=  match goal with
   | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
@@ -357,6 +340,38 @@ Ltac unifall :=
   || mtypes_ok  || Forall_find_tac).
 
 Ltac ecrush := unifall; eauto; crush; eauto.
+(* Methods OK Lemmas *)
+
+
+Lemma methodDecl_OK :forall C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
+  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
+  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  MType_OK C (MDecl C0 m fargs noDupfargs ret).
+Proof.
+  intros. apply ClassesOK in H0; inversion H0.
+  match goal with
+  [ H: Forall _ _ |- _ ] =>  eapply Forall_find in H; eauto
+  end.
+Qed.
+
+Lemma methodDecl_OK' :forall R D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs C0 m fargs noDupfargs ret,
+  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
+  find_refinement R (CRefine D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs) ->
+  MType_CRefinement_OK R (MDecl C0 m fargs noDupfargs ret).
+Proof.
+  intros. unifall. apply ClassesRefinementOK in H0; inversion H0;
+  match goal with
+  [ H: Forall _ _ |- _ ] => solve [eapply Forall_find in H; eauto]
+  end.
+Qed.
+
+
+Ltac mtype_OK m :=
+  match goal with
+    | [ H: find ?C _ = Some (CDecl _ _ _ _ _ ?Ms _ ), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
+      eapply methodDecl_OK in H1; eauto; inversion H1; subst; sort; clear H1
+  end.
+
 
 Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->

@@ -210,7 +210,7 @@ Inductive CRType_OK: ClassRefinement -> Prop :=
             pred R P ->
             fields_refinement P fs' ->
             NoDup (refs (fs' ++ fs)) ->
-            Forall (MType_OK (class_name R)) Ms ->
+            Forall (MType_CRefinement_OK R) Ms ->
             Forall (MRType_OK R) (mRefines) ->
             CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines)
     | TR_Class : forall R C fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
@@ -218,7 +218,7 @@ Inductive CRType_OK: ClassRefinement -> Prop :=
             first_refinement R->
             fields C fs' ->
             NoDup (refs (fs' ++ fs)) ->
-            Forall (MType_OK (class_name R)) Ms ->
+            Forall (MType_CRefinement_OK R) Ms ->
             Forall (MRType_OK R) (mRefines) ->
             CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
 
