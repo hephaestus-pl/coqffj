@@ -134,10 +134,8 @@ Lemma mbodyr_mtyper: forall m R xs e,
   mbody_r(m, R) = xs o e ->
   exists Bs B, mtype_r(m, R) = Bs ~> B.
 Proof.
-  induction 1.
-  - exists (map fargType fargs) B. eauto.
-  -
-Admitted.
+  induction 1; decompose_exs; do 2 eexists; eauto.
+Qed.
 
 Lemma exists_mbody_r: forall C D Cs m,
   mtype_r(m, C) = Cs ~> D ->
@@ -366,9 +364,10 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     mtype(m, C) = Ds ~> D0.
 Proof.
   intros; class_OK C.
-  find_dec_tac Ms m. 
+  find_dec_tac Ms m.
+  ecrush. eapply mty_ok. 
   ecrush; eapply mty_ok; ecrush.
-  eapply mty_no_override; ecrush.
+  ecrush; eapply mty_no_override; ecrush.
 Admitted.
 
 (* Subtype Lemmas *)
