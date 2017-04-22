@@ -140,7 +140,10 @@ Lemma exists_mbody_r: forall C D Cs m,
   mtype_r(m, C) = Cs ~> D ->
   exists xs e, mbody_r(m, C) = xs o e /\ NoDup (this :: xs) /\ length Cs = length xs.
 Proof.
-Admitted.
+  induction 1.
+  - exists (refs fargs) e. repeat (split; crush; eauto).
+  - decompose_exs. exists xs e. repeat (split; crush; eauto).
+Qed.
 
 Lemma exists_mbody: forall C D Cs m,
   mtype(m, C) = Cs ~> D ->
