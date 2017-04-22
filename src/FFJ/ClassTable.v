@@ -136,6 +136,8 @@ Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
+              (forall S xs' e', last_refinement C = Some S ->
+                                ~ mtype_r(m, S) = xs' ~> e') ->
               mtype(m, C) = Bs ~> B
   | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
