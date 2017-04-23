@@ -85,6 +85,11 @@ Ltac elim_eqs :=
   | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inversion H1; clear H1; subst
   end.
 
+Ltac inv_refname :=
+  match goal with
+  | [H: ?C @ ?feat = ?D @ ?feat' |- _ ] => inversion H; clear H; subst
+  end.
+
 Ltac unify_override :=
   match goal with
   | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst; clear H]
@@ -272,7 +277,7 @@ Ltac unify_pred :=
 
 Ltac unify_find_refinement :=
   match goal with
-  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => assert (RD1 = RD2) by (eapply find_refinement_det with R; [eexact H| eexact H1]); clear H1; subst
+  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => apply (find_refinement_det _ _ _ H) in H1; inversion H1; clear H1; subst
   end.
 
 Ltac unify_find_refinement' :=
@@ -295,7 +300,7 @@ Proof.
   - intros. inversion H3. simpl in *; subst. unify_pred. unify_find_refinement.
     specialize IHfields_refinement with fpred0; crush.
     subst. solve_first_pred. 
-  - intros_all. inversion H1. solve_first_pred. subst. unify_find_refinement; crush.
+  - intros_all. inversion H1. solve_first_pred. subst.  unify_find_refinement; crush.
 Qed.
 
 
@@ -333,7 +338,7 @@ Ltac unify_fields :=
   end.
 
 Ltac unifall :=
-  repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs
+  repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs || inv_refname
   || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
   || unify_find_refinement' || unify_find_refinement
   || unify_returnType || unify_fargsType
@@ -368,8 +373,10 @@ Qed.
 
 Ltac mtype_OK m :=
   match goal with
-    | [ H: find ?C _ = Some (CDecl _ _ _ _ _ ?Ms _ ), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
+  | [ H: find ?C _ = Some (CDecl _ _ _ _ _ ?Ms _ ), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
       eapply methodDecl_OK in H1; eauto; inversion H1; subst; sort; clear H1
+  | [ H: find_refinement ?R (CRefine _ _ _ _ ?Ms _ _ _), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
+      eapply methodDecl_OK' in H1; eauto; inversion H1; subst; sort; clear H1
   end.
 
 
@@ -524,14 +531,19 @@ Qed.
 
 
 
-Lemma A14': forall R D m C0 xs Ds e,
-  mtype_r(m,R) = Ds ~> D ->
-  mbody_r(m,R) = xs o e ->
-  class_name R = C0 ->
+Lemma A14': forall feat D m C0 xs Ds e,
+  mtype_r(m,(C0 @ feat)) = Ds ~> D ->
+  mbody_r(m,(C0 @ feat)) = xs o e ->
   exists D0 C,  C0 <: D0 /\ C <: D /\
   nil extds (this :: xs) : (D0 :: Ds) |-- e : C.
 Proof.
-  intros. induction H0.
+  intros. induction H0; subst. 
+  - mtype_OK m. clear H10. inversion H; subst; unifall; sort.
+    
+
+exists C E0. split; eauto.
+(* Voce precisa do lemma  methodDecl_OK' encontrando um method refine agora *) 
+
 Admitted.
 
 Lemma last_in: forall A l (x:A),
@@ -565,6 +577,7 @@ Proof.
   Case "mbdy_last".
     inversion H; ecrush; sort.
     false. apply mbodyr_mtyper in H3. ecrush.
+    apply last_refinement_same_name in H2; simpl in *; subst.
     eapply A14'; ecrush.
 Qed.
 
