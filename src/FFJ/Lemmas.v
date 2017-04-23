@@ -370,6 +370,17 @@ Proof.
   end.
 Qed.
 
+Lemma methodRefinement_OK :forall R D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs C0 m fargs noDupfargs ret,
+  find m Mrs = Some (MRefine C0 m fargs noDupfargs ret) ->
+  find_refinement R (CRefine D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs) ->
+  MRType_OK R (MRefine C0 m fargs noDupfargs ret).
+Proof.
+  intros. unifall. apply ClassesRefinementOK in H0; inversion H0;
+  match goal with
+  [ H: Forall _ _ |- _ ] => solve [eapply Forall_find in H; eauto]
+  end.
+Qed.
+
 
 Ltac mtype_OK m :=
   match goal with
@@ -377,6 +388,8 @@ Ltac mtype_OK m :=
       eapply methodDecl_OK in H1; eauto; inversion H1; subst; sort; clear H1
   | [ H: find_refinement ?R (CRefine _ _ _ _ ?Ms _ _ _), H1: find m ?Ms = Some (MDecl _ _ _ _ _) |- _ ] => 
       eapply methodDecl_OK' in H1; eauto; inversion H1; subst; sort; clear H1
+  | [ H: find_refinement ?R (CRefine _ _ _ _ _ _ ?Mrs _), H1: find m ?Mrs = Some (MRefine _ _ _ _ _) |- _ ] => 
+      eapply methodRefinement_OK in H1; eauto; inversion H1; subst; sort; clear H1
   end.
 
 
@@ -537,12 +550,13 @@ Lemma A14': forall feat D m C0 xs Ds e,
   exists D0 C,  C0 <: D0 /\ C <: D /\
   nil extds (this :: xs) : (D0 :: Ds) |-- e : C.
 Proof.
-  intros. induction H0; subst. 
-  - mtype_OK m. clear H10. inversion H; subst; unifall; sort.
-    
+  intros. remember (C0 @ feat) as R. 
+  mbdy_r_cases (induction H0) Case; subst.
+  Case "mbodyr_ok". 
+    mtype_OK m. unifall. inversion H; ecrush.
+  Case "mbodyr_refine".
+    inversion H; ecrush. sort. mtype_OK m.
 
-exists C E0. split; eauto.
-(* Voce precisa do lemma  methodDecl_OK' encontrando um method refine agora *) 
 
 Admitted.
 
