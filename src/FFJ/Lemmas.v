@@ -95,6 +95,11 @@ Ltac unify_override :=
   | [H: override ?m ?D ?Cs ?C0, H1: mtype(?m, ?D) = ?Ds ~> ?D0 |- _ ] => destruct H with Ds D0; [exact H1 | subst; clear H]
   end.
 
+Ltac pred_same_name :=
+  match goal with
+  | [H: pred ?R ?S |- _ ] => assert (class_name R = class_name S) by (apply (pred_same_cname _ _ H))
+  end.
+
 (* Auxiliary Lemmas *)
 (* mtype / MType_OK lemmas *)
 Lemma unify_returnType' : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
@@ -341,7 +346,7 @@ Ltac unifall :=
   repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs || inv_refname
   || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
   || unify_find_refinement' || unify_find_refinement
-  || unify_returnType || unify_fargsType
+  || unify_returnType || unify_fargsType || unify_pred
   || mtypes_ok  || Forall_find_tac).
 
 Ltac ecrush := unifall; eauto; crush; eauto.
@@ -542,23 +547,22 @@ Proof.
   induction 1 using ExpTyping_ind'; eauto; crush.
 Qed.
 
-
-
 Lemma A14': forall feat D m C0 xs Ds e,
   mtype_r(m,(C0 @ feat)) = Ds ~> D ->
   mbody_r(m,(C0 @ feat)) = xs o e ->
   exists D0 C,  C0 <: D0 /\ C <: D /\
   nil extds (this :: xs) : (D0 :: Ds) |-- e : C.
 Proof.
-  intros. remember (C0 @ feat) as R. 
+  intros. assert (class_name (C0 @ feat) = C0) by crush.
   mbdy_r_cases (induction H0) Case; subst.
   Case "mbodyr_ok". 
     mtype_OK m. unifall. inversion H; ecrush.
   Case "mbodyr_refine".
-    inversion H; ecrush. sort. mtype_OK m.
-
-
-Admitted.
+    inversion H; ecrush. sort. mtype_OK m; unifall. simpl in H7.
+    do 2 eexists; ecrush.
+  Case "mbodyr_pred".
+    inversion H; pred_same_name; ecrush.
+Qed.
 
 Lemma last_in: forall A l (x:A),
   last_error l = Some x ->

@@ -177,6 +177,7 @@ Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               refs fargs = xs ->
+      
               mbody_r(m, R) = xs o e
   | mbodyr_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
