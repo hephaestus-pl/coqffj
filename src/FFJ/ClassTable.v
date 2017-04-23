@@ -137,6 +137,11 @@ Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: Cla
   where "'mtype_r(' m ',' R ')' '=' cs '~>' c0"
         := (mtype_refinement m R cs c0).
 
+Tactic Notation "mtype_r_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "mtyr_decl_ok"         | Case_aux c "mtyr_refinement_ok"
+  | Case_aux c "mtyr_pred" ].
+
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
   | mty_ok : forall D Fs K Ms noDupfs noDupMds fargs noDupfargs e,
@@ -188,6 +193,11 @@ Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop
               mbody_r(m, R) = xs o e
   where "'mbody_r(' m ',' R ')' '=' xs 'o' e"
         := (mbody_refinement m R xs e).
+
+Tactic Notation "mbdy_r_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "mbodyr_ok" | Case_aux c "mbodyr_refine"
+  | Case_aux c "mbodyr_pred" ].
 
 Reserved Notation "'mbody(' m ',' D ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive m_body (m: id) (C: ClassName) (xs: [ClassName]) (e: Exp) : Prop:=
