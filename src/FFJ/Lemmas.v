@@ -33,19 +33,19 @@ Ltac find_dec_tac L i:=
   end.
 
 Ltac decompose_ex H :=
-  repeat match type of H with
+  match type of H with
            | ex (fun x => _) =>
              let x := fresh x in
              destruct H as [x H]; sort
          end.
 
 Ltac decompose_exs :=
-  repeat match goal with
+  match goal with
   | [H: exists x, _ |- _ ] => decompose_ex H
   end.
 
 Ltac inv_decl :=
-  repeat let C := fresh "C" in
+  let C := fresh "C" in
   let feat := fresh "feat" in
   let R := fresh "R" in
   let D := fresh "D" in
@@ -81,7 +81,7 @@ Ltac mtypes_ok :=
   end.
 
 Ltac elim_eqs :=
-  repeat match goal with
+  match goal with
   | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inversion H1; clear H1; subst
   end.
 
@@ -121,20 +121,32 @@ Proof.
   induction 1; crush.
 Qed.
 
-
-(*
-Lemma mbody_in_succ : forall C D Fs noDupfs K Ms noDupMds m MD,
-  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-  find m Ms = Some MD ->
-  (forall S xs' e', succ (inl C) S -> ~mbody_r(m, S) = xs' o e').
+Lemma last_in: forall A l (x:A),
+  last_error l = Some x ->
+  In x l.
 Proof.
 Admitted.
-*)
+
+Lemma last_refinement_same_name: forall C R, 
+  last_refinement C = Some R ->
+  class_name R = C.
+Proof.
+  intros. destruct R. simpl.
+  unfold last_refinement in H.
+Admitted.
+Hint Resolve last_refinement_same_name.
+
+Lemma last_refinement_find: forall C R,
+  last_refinement C = Some R ->
+  exists CR, find_refinement R CR.
+Proof.
+Admitted.
+
 Lemma mbodyr_mtyper: forall m R xs e,
   mbody_r(m, R) = xs o e ->
   exists Bs B, mtype_r(m, R) = Bs ~> B.
 Proof.
-  induction 1; decompose_exs; do 2 eexists; eauto.
+  induction 1; repeat decompose_exs; do 2 eexists; eauto.
 Qed.
 
 Lemma exists_mbody_r: forall C D Cs m,
@@ -143,8 +155,8 @@ Lemma exists_mbody_r: forall C D Cs m,
 Proof.
   induction 1.
   - exists (refs fargs) e. repeat (split; crush; eauto).
-  - decompose_exs. exists (refs fargs) e. repeat (split; crush; eauto).
-  - decompose_exs. exists xs e. repeat (split; crush; eauto).
+  - repeat decompose_exs. exists (refs fargs) e. repeat (split; crush; eauto).
+  - repeat decompose_exs. exists xs e. repeat (split; crush; eauto).
 Qed.
 
 Lemma exists_mbody: forall C D Cs m,
@@ -154,9 +166,9 @@ Proof.
   induction 1; eauto.
   - exists (refs fargs) e; repeat (split; eauto); crush.
     eapply mbody_ok; eauto. intros_all. 
-    eapply mbodyr_mtyper in H3. destruct H3. decompose_exs. eauto.
+    eapply mbodyr_mtyper in H3. destruct H3. repeat decompose_exs. eauto.
   - crush; eexists; eauto. eexists. split. eapply mbody_no_override; eauto.
-    intros_all. eapply mbodyr_mtyper in H7. decompose_exs; eauto.
+    intros_all. eapply mbodyr_mtyper in H7. repeat decompose_exs; eauto.
     split; eauto.
   - edestruct exists_mbody_r; eauto. crush.
     do 2 eexists. split. eapply mbody_last; crush; eauto. eauto.
@@ -225,7 +237,7 @@ Ltac superclass_defined_or_obj C :=
 
 
 Ltac unify_find_ref :=
-  repeat let H := fresh "H" in
+  let H := fresh "H" in
   match goal with
   | [H1: find ?x ?xs = Some ?u |- _] => assert (ref u = x) as H; [eapply find_ref_inv; eauto|]; subst;
     repeat match goal with
@@ -252,8 +264,8 @@ Proof.
   induction H.
   intros.
   inversion H2.
-  inv_decl. unify_find_ref. subst. simpl in *. inversion H7; subst; clear H7.
-  elim_eqs; reflexivity.
+  repeat inv_decl. repeat unify_find_ref. subst. simpl in *. inversion H7; subst; clear H7.
+  repeat elim_eqs; reflexivity.
 Qed.
 
 Lemma find_refinement_det: forall R RD1 RD2,
@@ -287,6 +299,7 @@ Ltac unify_find_refinement :=
 
 Ltac unify_find_refinement' :=
   match goal with
+  | [H: find_refinement ?R (CRefine ?R _ _ _ _ _ _ _) |- _ ] => fail 1
   | [H: find_refinement ?R (CRefine ?R' _ _ _ _ _ _ _) |- _ ] => apply find_refinement_same_name in H
   end.
 
@@ -328,12 +341,12 @@ Proof.
   Case "F_Decl".
     destruct H4.
     rewrite obj_notin_dom in H; crush.
-    simpl in *; subst. elim_eqs.
+    simpl in *; subst. repeat elim_eqs.
     apply IHfields in H7. subst. unify_fields_refinement. reflexivity.
     elim_eqs.
     inversion H3. subst. crush. subst.
-    elim_eqs.
-    subst. elim_eqs. apply IHfields in H6; subst; eauto.
+    repeat elim_eqs.
+    subst. repeat elim_eqs. apply IHfields in H6; subst; eauto.
 Qed.
 
 
@@ -343,7 +356,7 @@ Ltac unify_fields :=
   end.
 
 Ltac unifall :=
-  repeat (decompose_exs || inv_decl || unify_find_ref || elim_eqs || inv_refname
+  idtac; repeat (decompose_exs || inv_decl || elim_eqs || inv_refname
   || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
   || unify_find_refinement' || unify_find_refinement
   || unify_returnType || unify_fargsType || unify_pred
@@ -398,14 +411,34 @@ Ltac mtype_OK m :=
   end.
 
 
+Lemma last_refinement_dec:forall C,
+  {exists R, last_refinement C = Some R} + {last_refinement C = None}.
+Proof. 
+  intros.
+  destruct (last_refinement C); crush. left; eexists; eauto.
+Qed.
+
+Lemma mrefine_dec: forall m R,
+  {exists Ds D0, mtype_r(m, R) = Ds ~> D0} + {forall Ds D0, ~mtype_r(m, R) = Ds ~> D0}.
+Proof.
+Admitted.
+
 Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
     mtype(m, D) = Ds ~> D0 ->
     mtype(m, C) = Ds ~> D0.
 Proof.
   intros; class_OK C.
-  find_dec_tac Ms m.
-  ecrush. eapply mty_ok. 
+  destruct last_refinement_dec with C. unifall.
+  admit.
+  find_dec_tac Ms m. inv_decl.
+repeat (decompose_exs || inv_decl || elim_eqs
+  || unify_find_ref ).
+
+idtac. unif|| unify_override || unify_fields || unify_fields_refinement 
+  || unify_find_refinement' || unify_find_refinement
+  || unify_returnType || unify_fargsType || unify_pred
+  || mtypes_ok  || Forall_find_tacall. repeat unify_find_refinement. inv_refname. unify_find_ref. repeat decompose_exs. elim_ unifall. eapply mty_ok; ecrush.
   ecrush; eapply mty_ok; ecrush.
   ecrush; eapply mty_no_override; ecrush.
 Admitted.
@@ -435,7 +468,6 @@ Proof.
   right. intros_all. inversion H; ecrush.
   right; intros_all. inversion H; ecrush.
 Qed.
-
 
 Lemma last_refinement_fields: forall C CR CD,
   find C CT = Some CD ->
@@ -563,21 +595,6 @@ Proof.
   Case "mbodyr_pred".
     inversion H; pred_same_name; ecrush.
 Qed.
-
-Lemma last_in: forall A l (x:A),
-  last_error l = Some x ->
-  In x l.
-Proof.
-Admitted.
-
-Lemma last_refinement_same_name: forall C R, 
-  last_refinement C = Some R ->
-  class_name R = C.
-Proof.
-  intros. destruct R. simpl.
-  unfold last_refinement in H.
-Admitted.
-Hint Resolve last_refinement_same_name.
 
 Lemma A14: forall D m C0 xs Ds e,
   mtype(m,C0) = Ds ~> D ->
