@@ -148,8 +148,8 @@ Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
               find m Ms = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
-              (forall S xs' e', last_refinement C = Some S ->
-                                ~ mtype_r(m, S) = xs' ~> e') ->
+              (forall S Bs' B', last_refinement C = Some S ->
+                                ~ mtype_r(m, S) = Bs' ~> B') ->
               mtype(m, C) = Bs ~> B
   | mty_no_override: forall D Fs K Ms noDupfs noDupMds,
               find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
@@ -246,8 +246,8 @@ Inductive introduce (m: id) (R: RefinementName): Prop :=
     introduce m R.
 
 Inductive extend (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
-  | E_Refinement : forall Ds D0,
-    (mtype_r(m, R) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
+  | E_Refinement : 
+    (forall Ds D0, mtype_r(m, R) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
     extend m R Cs C0.
 
 Lemma find_class_same_ref: forall C CD,

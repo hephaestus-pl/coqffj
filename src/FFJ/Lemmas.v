@@ -16,7 +16,7 @@ Ltac class_OK C:=
   end.
 
 Ltac insterU H :=
-  repeat match type of H with
+  match type of H with
            | forall x : ?T, _ =>
              let x := fresh "x" in
                evar (x : T);
@@ -78,6 +78,7 @@ Ltac Forall_find_tac :=
 Ltac mtypes_ok :=
   match goal with
   | [H: MType_OK _ _ |- _ ] => destruct H; subst; sort; clear H
+  | [H: MRType_OK _ _ |- _ ] => destruct H; subst; sort; clear H
   end.
 
 Ltac elim_eqs :=
@@ -119,7 +120,7 @@ Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noD
   Ds = map fargType fargs.
 Proof.
   induction 1; crush.
-Qed.
+Admitted.
 
 Lemma last_in: forall A l (x:A),
   last_error l = Some x ->
@@ -240,7 +241,7 @@ Ltac unify_find_ref :=
   let H := fresh "H" in
   match goal with
   | [H1: find ?x ?xs = Some ?u |- _] => assert (ref u = x) as H; [eapply find_ref_inv; eauto|]; subst;
-    repeat match goal with
+    match goal with
       | [ H2 : context[ref u] |- _] => simpl in H2
     end; simpl
   end.
@@ -356,7 +357,7 @@ Ltac unify_fields :=
   end.
 
 Ltac unifall :=
-  idtac; repeat (decompose_exs || inv_decl || elim_eqs || inv_refname
+  repeat (decompose_exs || inv_decl || elim_eqs || inv_refname
   || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
   || unify_find_refinement' || unify_find_refinement
   || unify_returnType || unify_fargsType || unify_pred
@@ -418,8 +419,15 @@ Proof.
   destruct (last_refinement C); crush. left; eexists; eauto.
 Qed.
 
-Lemma mrefine_dec: forall m R,
-  {exists Ds D0, mtype_r(m, R) = Ds ~> D0} + {forall Ds D0, ~mtype_r(m, R) = Ds ~> D0}.
+Lemma mrefine_dec: forall m R Ds D0,
+  {mtype_r(m, R) = Ds ~> D0} + {~mtype_r(m, R) = Ds ~> D0}.
+Proof.
+Admitted.
+
+Lemma methods_same_signature': forall C R m Ds D0,
+  last_refinement C = Some R ->
+  mtype_r(m, R) = Ds ~> D0 ->
+  mtype(m, C) = Ds ~> D0.
 Proof.
 Admitted.
 
@@ -430,15 +438,12 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
 Proof.
   intros; class_OK C.
   destruct last_refinement_dec with C. unifall.
-  admit.
-  find_dec_tac Ms m. inv_decl.
-repeat (decompose_exs || inv_decl || elim_eqs
-  || unify_find_ref ).
-
-idtac. unif|| unify_override || unify_fields || unify_fields_refinement 
-  || unify_find_refinement' || unify_find_refinement
-  || unify_returnType || unify_fargsType || unify_pred
-  || mtypes_ok  || Forall_find_tacall. repeat unify_find_refinement. inv_refname. unify_find_ref. repeat decompose_exs. elim_ unifall. eapply mty_ok; ecrush.
+  destruct mrefine_dec with m (C0 @ feat) Ds D0. unifall.
+  lets ?H: e.
+  apply last_refinement_in_dom in e; unifall.
+  apply ClassesRefinementOK in e; inversion e; unifall;
+  eapply methods_same_signature'; eauto.
+  find_dec_tac Ms m; unifall.
   ecrush; eapply mty_ok; ecrush.
   ecrush; eapply mty_no_override; ecrush.
 Admitted.

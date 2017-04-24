@@ -165,7 +165,7 @@ Inductive MType_OK : ClassName -> MethodDecl -> Prop :=
 (*In the paper there is no override in this rule, but if you don't need it here
 then you wouldn't need it in MType_OK also *)
 Inductive MType_CRefinement_OK : RefinementName -> MethodDecl -> Prop :=
-  | TCR_Method : forall R C D C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs fs' noDupfDecls' K' Ms' noDupMds',
+  | TCR_Method : forall R S C D C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs fs' noDupfDecls' K' Ms' noDupMds',
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             R = C @ feat ->
@@ -176,10 +176,12 @@ Inductive MType_CRefinement_OK : RefinementName -> MethodDecl -> Prop :=
             refs fargs = xs ->
             find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
             introduce m R ->
+            pred R S ->
+            extend m S Cs C0 ->
             MType_CRefinement_OK R (MDecl C0 m fargs noDupFargs e0).
 
 Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
-  | TR_Method : forall R C C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
+  | TR_Method : forall S R C C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             R = C @ feat ->
@@ -188,7 +190,9 @@ Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
             refs fargs = xs ->
             find m mRefines = Some (MRefine C0 m fargs noDupFargs e0) ->
             find m Ms = None ->
-            extend m R Cs C0 ->
+            pred R S ->
+            extend m S Cs C0 ->
+            override m C Cs C0 ->
             MRType_OK R (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
