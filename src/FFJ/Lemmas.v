@@ -45,28 +45,12 @@ Ltac decompose_exs :=
   end.
 
 Ltac inv_decl :=
-  let C := fresh "C" in
-  let feat := fresh "feat" in
-  let R := fresh "R" in
-  let D := fresh "D" in
-  let K := fresh "K" in
-  let Kr := fresh "Kr" in
-  let m := fresh "m" in
-  let f := fresh "f" in
-  let fargs := fresh "fargs" in
-  let noDupFargs := fresh "noDupFargs" in
-  let noDupfs := fresh "noDupfs" in
-  let fs := fresh "fs" in
-  let Ms := fresh "Ms" in
-  let noDupMs := fresh "noDupMs" in
-  let Mrs := fresh "Mrs" in
-  let noDupMrs := fresh "noDupMrs" in
   match goal with
-  | [ MD : MethodDecl |- _ ] => destruct MD as [C m fargs noDupFargs e]
-  | [ FD : FieldDecl |- _ ] => destruct FD as [C f]
-  | [ CD : ClassDecl |- _ ] => destruct CD as [C D fs noDupfs K Ms noDupMs]
-  | [ CR : ClassRefinement |- _ ] => destruct CR as [R fs noDupfs Kr Ms noDupMs Mrs noDupMrs]
-  | [ R : RefinementName |- _ ] => destruct R as [C feat]
+  | [ MD : MethodDecl |- _ ] => destruct MD as [?C ?m ?fargs ?noDupFargs ?e]
+  | [ FD : FieldDecl |- _ ] => destruct FD as [?C ?f]
+  | [ CD : ClassDecl |- _ ] => destruct CD as [?C ?D ?fs ?noDupfs ?K ?Ms ?noDupMs]
+  | [ CR : ClassRefinement |- _ ] => destruct CR as [?R ?fs ?noDupfs ?Kr ?Ms ?noDupMs ?Mrs ?noDupMrs]
+  | [ R : RefinementName |- _ ] => destruct R as [?C ?feat]
   end.
 
 Ltac Forall_find_tac :=
@@ -120,7 +104,7 @@ Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noD
   Ds = map fargType fargs.
 Proof.
   induction 1; crush.
-Admitted.
+Qed.
 
 Lemma last_in: forall A l (x:A),
   last_error l = Some x ->
