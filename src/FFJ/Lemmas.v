@@ -85,26 +85,15 @@ Ltac pred_same_name :=
   | [H: pred ?R ?S |- _ ] => assert (class_name R = class_name S) by (apply (pred_same_cname _ _ H))
   end.
 
-(* Auxiliary Lemmas *)
-(* mtype / MType_OK lemmas *)
-Lemma unify_returnType' : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
-  mtype( m, C)= Ds ~> D ->
-  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
-  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
-  D = C0.
-Proof.
-  induction 1; crush.
-Qed.
+Ltac unify_find_ref :=
+  let H := fresh "H" in
+  match goal with
+  | [H1: find ?x ?xs = Some ?u |- _] => assert (ref u = x) as H; [eapply find_ref_inv; eauto|]; subst;
+    match goal with
+      | [ H2 : context[ref u] |- _] => simpl in H2
+    end; simpl
+  end.
 
-
-Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
-  mtype( m, C)= Ds ~> D ->
-  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
-  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
-  Ds = map fargType fargs.
-Proof.
-  induction 1; crush.
-Qed.
 
 Lemma last_in: forall A l (x:A),
   last_error l = Some x ->
@@ -126,6 +115,108 @@ Lemma last_refinement_find: forall C R,
   exists CR, find_refinement R CR.
 Proof.
 Admitted.
+
+Lemma last_refinement_in: forall C R, 
+  last_refinement C = Some R ->
+  exists CR, In CR RT.
+Proof.
+Admitted.
+
+Lemma pred_det: forall R R' S,
+  pred S R ->
+  pred S R' ->
+  R = R'.
+Proof.
+  intros. gen R'.
+  induction H.
+  intros.
+  inversion H2.
+  repeat inv_decl. repeat unify_find_ref. subst. simpl in *. inversion H7; subst; clear H7.
+  repeat elim_eqs; reflexivity.
+Qed.
+
+Lemma find_refinement_det: forall R RD1 RD2,
+  find_refinement R RD1 ->
+  find_refinement R RD2 ->
+  RD1 = RD2.
+Proof.
+  intros. gen RD2.
+  induction H. subst.
+  intros. inversion H0. inversion H; subst.
+  rewrite H3 in H1; crush.
+Qed.
+
+Lemma find_refinement_same_name: forall R R' fs noDupfs Kr Ms noDupMs Mrs noDupMrs,
+  find_refinement R (CRefine R' fs noDupfs Kr Ms noDupMs Mrs noDupMrs) ->
+  R = R'.
+Proof.
+  intros. lets ?H: H. apply find_refinement_same_refinement in H.
+  destruct R. destruct R'. crush.
+Qed.
+
+Ltac unify_pred :=
+  match goal with
+  | [H: pred ?R ?S1, H1: pred ?R ?S2 |- _ ] => assert (S1 = S2) by (apply pred_det with R; [exact H| exact H1]); clear H1; subst
+  end.
+
+Ltac unify_find_refinement :=
+  match goal with
+  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => apply (find_refinement_det _ _ _ H) in H1; inversion H1; clear H1; subst
+  end.
+
+Ltac unify_find_refinement' :=
+  match goal with
+  | [H: find_refinement ?R (CRefine ?R _ _ _ _ _ _ _) |- _ ] => fail 1
+  | [H: find_refinement ?R (CRefine ?R' _ _ _ _ _ _ _) |- _ ] => destruct (find_refinement_same_name _ _ _ _ _ _ _ _ _ H)
+  end.
+
+Ltac solve_first_pred :=
+  match goal with
+  | [H: pred ?R ?S, H1: first_refinement ?R |- _ ] => unfold first_refinement in H1; specialize H1 with S; contradiction
+  end.
+
+
+Lemma mnotin_last_notmtyper : forall R m C,
+  mnotin_last_refinement m C ->
+  last_refinement C = Some R ->
+  forall Ds D, ~mtype_r(m, R) = Ds ~> D.
+Proof.
+  intros_all. lets ?H: H0. Check last_in.
+  apply last_refinement_find in H2. decompose_exs. inv_decl. unify_find_refinement'.
+  apply ClassesRefinementOK in H2.
+  induction H with R.
+ inversion H2; subst; clear H2; sort.
+  unify_find_refinement. destruct H5 with P; crush.
+  unify_find_refinement.
+Admitted.
+
+(* Auxiliary Lemmas *)
+(* mtype / MType_OK lemmas *)
+Lemma unify_returnType' : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
+  mtype( m, C)= Ds ~> D ->
+  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
+  mnotin_last_refinement m C ->
+  D = C0.
+Proof.
+  induction 1; crush. 
+  - false.  
+
+ destruct H4 with S; eauto; inversion H1; crush.
+destruct H4 with S. eauto. 
+Qed.
+
+
+Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
+  mtype( m, C)= Ds ~> D ->
+  find C CT = Some (CDecl C D0 Fs noDupfs K Ms noDupMds) ->
+  find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
+  mnotin_last_refinement m C ->
+  Ds = map fargType fargs.
+Proof.
+  induction 1; crush.
+Qed.
+
 
 Lemma mbodyr_mtyper: forall m R xs e,
   mbody_r(m, R) = xs o e ->
@@ -212,7 +303,9 @@ Ltac unify_fargsType :=  match goal with
      H2: find ?m ?Ms = Some (MDecl _ ?m ?fargs _ _) |- _ ] => fail 1
   | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
      H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
-     H2: find ?m ?Ms = Some (MDecl _ ?m ?fargs _ _) |- _ ] => lets ?H: unify_fargsType H H1 H2; subst
+     H2: find ?m ?Ms = Some (MDecl _ ?m ?fargs _ _),
+     H3: last_refinement ?C = Some ?R,
+     H4: ~mtype_r(?m, ?R) = ?Ds ~> ?D |- _ ] => lets ?H: unify_fargsType H H1 H2 H3 H4; subst
   end.
 
 Ltac superclass_defined_or_obj C :=
@@ -220,78 +313,6 @@ Ltac superclass_defined_or_obj C :=
   | [H1: find C _ = _ |- _ ] => edestruct super_obj_or_defined; [eexact H1 |  | ]; subst
   end.
 
-
-Ltac unify_find_ref :=
-  let H := fresh "H" in
-  match goal with
-  | [H1: find ?x ?xs = Some ?u |- _] => assert (ref u = x) as H; [eapply find_ref_inv; eauto|]; subst;
-    match goal with
-      | [ H2 : context[ref u] |- _] => simpl in H2
-    end; simpl
-  end.
-
-(**)
-
-(*
-Ltac solve_last_succ :=
-  match goal with
-  | [H: last ?R, H1: succ ?R ?S |- _ ] => false; unfold last in H; specialize H with S; apply H in H1; exact H1
-  end.
-*)
-
-
-Lemma pred_det: forall R R' S,
-  pred S R ->
-  pred S R' ->
-  R = R'.
-Proof.
-  intros. gen R'.
-  induction H.
-  intros.
-  inversion H2.
-  repeat inv_decl. repeat unify_find_ref. subst. simpl in *. inversion H7; subst; clear H7.
-  repeat elim_eqs; reflexivity.
-Qed.
-
-Lemma find_refinement_det: forall R RD1 RD2,
-  find_refinement R RD1 ->
-  find_refinement R RD2 ->
-  RD1 = RD2.
-Proof.
-  intros. gen RD2.
-  induction H. subst.
-  intros. inversion H0. inversion H; subst.
-  rewrite H3 in H1; crush.
-Qed.
-
-Lemma find_refinement_same_name: forall R R' fs noDupfs Kr Ms noDupMs Mrs noDupMrs,
-  find_refinement R (CRefine R' fs noDupfs Kr Ms noDupMs Mrs noDupMrs) ->
-  find_refinement R (CRefine R fs noDupfs Kr Ms noDupMs Mrs noDupMrs).
-Proof.
-  intros. lets ?H: H. apply find_refinement_same_refinement in H.
-  destruct R. destruct R'. crush.
-Qed.
-
-Ltac unify_pred :=
-  match goal with
-  | [H: pred ?R ?S1, H1: pred ?R ?S2 |- _ ] => assert (S1 = S2) by (apply pred_det with R; [exact H| exact H1]); clear H1; subst
-  end.
-
-Ltac unify_find_refinement :=
-  match goal with
-  | [H: find_refinement ?R ?RD1, H1: find_refinement ?R ?RD2 |- _ ] => apply (find_refinement_det _ _ _ H) in H1; inversion H1; clear H1; subst
-  end.
-
-Ltac unify_find_refinement' :=
-  match goal with
-  | [H: find_refinement ?R (CRefine ?R _ _ _ _ _ _ _) |- _ ] => fail 1
-  | [H: find_refinement ?R (CRefine ?R' _ _ _ _ _ _ _) |- _ ] => apply find_refinement_same_name in H
-  end.
-
-Ltac solve_first_pred :=
-  match goal with
-  | [H: pred ?R ?S, H1: first_refinement ?R |- _ ] => unfold first_refinement in H1; specialize H1 with S; contradiction
-  end.
 
 Lemma fields_refinement_det: forall R f1 f2,
   fields_refinement R f1 ->
@@ -404,15 +425,18 @@ Proof.
 Qed.
 
 Lemma mrefine_dec: forall m R Ds D0,
-  {mtype_r(m, R) = Ds ~> D0} + {~mtype_r(m, R) = Ds ~> D0}.
+  {exists Ds D0, mtype_r(m, R) = Ds ~> D0} + {~mtype_r(m, R) = Ds ~> D0}.
 Proof.
 Admitted.
 
-Lemma methods_same_signature': forall C R m Ds D0,
+Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
+  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
   last_refinement C = Some R ->
   mtype_r(m, R) = Ds ~> D0 ->
   mtype(m, C) = Ds ~> D0.
 Proof.
+  intros; class_OK C; unifall.
+  induction H1.
 Admitted.
 
 Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
@@ -427,6 +451,11 @@ Proof.
   apply last_refinement_in_dom in e; unifall.
   apply ClassesRefinementOK in e; inversion e; unifall;
   eapply methods_same_signature'; eauto.
+  find_dec_tac Ms m; unifall.
+  ecrush; eapply mty_ok; ecrush.
+  ecrush; eapply mty_no_override; ecrush.
+  
+ admit.
   find_dec_tac Ms m; unifall.
   ecrush; eapply mty_ok; ecrush.
   ecrush; eapply mty_no_override; ecrush.
