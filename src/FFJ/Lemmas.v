@@ -94,20 +94,33 @@ Ltac unify_find_ref :=
     end; simpl
   end.
 
+Lemma opt_fun_dec: forall A (l: [A]) (f: [A] -> option A), 
+  {exists (x:A), f l = Some x} + {f l = None}.
+Proof. crush. destruct f as [|a]; crush. left; exists a; auto.
+Qed.
 
-Lemma last_in: forall A l (x:A),
-  last_error l = Some x ->
-  In x l.
+Lemma last_error_refinement: forall C R,
+  last_refinement C = Some R ->
+  exists CR, last_error (refinements_of C) = Some CR /\ (class_name CR @ ref CR = R).
 Proof.
-Admitted.
+  intros. unfold last_refinement in *.
+  destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
+  decompose_exs; rewrite e in H. exists x; crush.
+  rewrite e in H. inversion H.
+Qed.
 
 Lemma last_refinement_same_name: forall C R, 
   last_refinement C = Some R ->
   class_name R = C.
 Proof.
-  intros. destruct R. simpl.
-  unfold last_refinement in H.
-Admitted.
+  intros. apply last_error_refinement in H. decompose_exs. destruct H.
+  SearchAbout last_error.
+  apply last_in in H.
+  SearchAbout refinements_of.
+  lets ?H: refinements_same_name C.
+  rewrite Forall_forall in H1. eapply H1 in H.
+  crush.
+Qed.
 Hint Resolve last_refinement_same_name.
 
 Lemma last_refinement_find: forall C R,
