@@ -122,24 +122,40 @@ Proof.
 Qed.
 Hint Resolve last_refinement_same_name.
 
-Lemma last_refinement_find: forall C R,
-  last_refinement C = Some R ->
-  exists CR, find_refinement R CR.
-Proof.
-Admitted.
-
 Lemma last_refinement_in: forall C R, 
   last_refinement C = Some R ->
-  exists CR, In CR RT.
+  exists CR, In CR RT /\ class_name CR = C.
 Proof.
   intros. unfold last_refinement in H.
   destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
   decompose_exs.
-  apply last_in in e. SearchAbout (refinements_of C).
+  rewrite e in H.
+  apply last_in in e.
   unfold refinements_of in e.
-  apply filter_In in e. exists x; crush.
+  apply filter_In in e. exists x; crush. destruct x. destruct r.
+  apply beq_id_eq in H1. auto.
   rewrite e in H; crush.
 Qed.
+
+
+Lemma last_refinement_find: forall C R,
+  last_refinement C = Some R ->
+  exists CR, find_refinement R CR.
+Proof.
+  Print find_refinement.
+  intros.
+  destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
+  unfold last_refinement in H. decompose_exs.
+  exists x. apply R_Find with C (ref R) (refinements_of C); auto.
+  rewrite e in H. apply last_in in e.
+  lets ?H: refinements_same_name C. rewrite Forall_forall in H0.
+  apply H0 in e. crush.
+  rewrite e in H. destruct x. simpl in *. destruct r. destruct R. inversion H. subst.
+  apply last_in in e. SearchAbout find In.
+(* preciso que as feats sejam unicas *)
+Admitted.
+
+
 
 Lemma pred_det: forall R R' S,
   pred S R ->
@@ -310,10 +326,12 @@ Qed.
 Ltac unify_returnType :=  match goal with
   | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
      H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
-     H2: find ?m ?Ms = Some (MDecl ?D ?m _ _ _) |- _ ] => fail 1 (*needed for no infinite loop *)
+     H2: find ?m ?Ms = Some (MDecl ?D ?m _ _ _),
+     H3: mnotin_last_refinement ?m ?C |- _ ] => fail 1 (*needed for no infinite loop *)
   | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
      H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
-     H2: find ?m ?Ms = Some (MDecl ?C0 ?m _ _ _) |- _ ] => lets ?H: unify_returnType' H H1 H2; subst
+     H2: find ?m ?Ms = Some (MDecl ?C0 ?m _ _ _),
+     H3: mnotin_last_refinement ?m ?C |- _ ] => lets ?H: unify_returnType' H H1 H2 H3; subst
   end.
 
 Ltac unify_fargsType :=  match goal with
@@ -511,11 +529,12 @@ Lemma last_refinement_fields: forall C CR CD,
   last_refinement C = Some CR ->
   exists fs, fields_refinement CR fs.
 Proof.
-  intros. lets ?H: H0.
-  class_OK C. apply last_refinement_in_dom in H0. destruct H0 as [CRD].
-  destruct CRD. destruct CR.  unifall. 
-  apply ClassesRefinementOK in H. 
-  inversion H; eexists; solve [econstructor; eauto].
+  intros. lets ?H: H0. inv_decl.
+  class_OK C. apply last_refinement_in in H0. unifall.
+  apply ClassesRefinementOK' in H0.
+  inversion H0; unifall; eexists.
+  econstructor; eauto.
+ solve [econstructor; eauto].
 Qed.
 
 Lemma subtype_fields: forall C D fs ,

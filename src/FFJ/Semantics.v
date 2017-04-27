@@ -258,12 +258,14 @@ Proof.
   apply filter_In in H2.
 Admitted.
 
-Lemma last_refinement_in_dom: forall C CR,
-  last_refinement C = Some CR ->
-  exists CD, find_refinement CR CD.
+Lemma ClassesRefinementOK': forall R, 
+  In R RT -> 
+  CRType_OK R.
 Proof.
-Admitted.
-  
+  apply Forall_forall.
+  exact RT_wellformed.
+Qed.
+
 Lemma ClassesRefinementOK: forall R RD, 
   find_refinement R RD ->
   CRType_OK RD.
@@ -272,10 +274,9 @@ Proof.
   apply find_in in H2.
   unfold refinements_of in H2.
   apply filter_In in H2. destruct H2.
-  assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
-  exact RT_wellformed. eapply H2; eauto.
+  eapply ClassesRefinementOK'; eauto.
 Qed.
-Hint Resolve ClassesRefinementOK pred_in_dom.
+Hint Resolve ClassesRefinementOK  ClassesRefinementOK' pred_in_dom.
 
 
 Hypothesis ClassesOK: forall C CD, 
