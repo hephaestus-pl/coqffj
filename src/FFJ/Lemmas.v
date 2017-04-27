@@ -116,7 +116,6 @@ Proof.
   intros. apply last_error_refinement in H. decompose_exs. destruct H.
   SearchAbout last_error.
   apply last_in in H.
-  SearchAbout refinements_of.
   lets ?H: refinements_same_name C.
   rewrite Forall_forall in H1. eapply H1 in H.
   crush.
@@ -133,7 +132,14 @@ Lemma last_refinement_in: forall C R,
   last_refinement C = Some R ->
   exists CR, In CR RT.
 Proof.
-Admitted.
+  intros. unfold last_refinement in H.
+  destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
+  decompose_exs.
+  apply last_in in e. SearchAbout (refinements_of C).
+  unfold refinements_of in e.
+  apply filter_In in e. exists x; crush.
+  rewrite e in H; crush.
+Qed.
 
 Lemma pred_det: forall R R' S,
   pred S R ->
