@@ -72,8 +72,14 @@ Ltac elim_eqs :=
 
 Ltac inv_refname :=
   match goal with
-  | [H: ?C @ ?feat = ?D @ ?feat' |- _ ] => inversion H; clear H; subst
+  | [H: ?C @ ?feat = ?D @ ?feat' |- _ ] => inversion H; subst; clear H
   end.
+
+Ltac inv_crefine:=
+  match goal with
+  | [H: CRefine _ _ _ _ _ _ _ _ = CRefine _ _ _ _ _ _ _ _ |- _ ] => inversion H; subst; clear H
+  end.
+
 
 Ltac unify_override :=
   match goal with
@@ -120,11 +126,19 @@ Proof.
   rewrite Forall_forall in H1. eapply H1 in H.
   crush.
 Qed.
+
+Ltac lastref_samename :=
+  match goal with
+  |[H: last_refinement ?C = Some (?C @ _) |- _ ] => fail 1
+  |[H: last_refinement ?C = Some (?C1 @ _) |- _ ] => 
+    lets ?H: H; apply last_refinement_same_name in H; simpl in *; subst
+  end.
+
 Hint Resolve last_refinement_same_name.
 
 Lemma last_refinement_in: forall C R, 
   last_refinement C = Some R ->
-  exists CR, In CR RT /\ class_name CR = C.
+  exists CR, In CR RT /\ class_name CR = C /\ ref CR = ref R.
 Proof.
   intros. unfold last_refinement in H.
   destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
@@ -137,6 +151,16 @@ Proof.
   rewrite e in H; crush.
 Qed.
 
+Lemma last_find: forall (A: Set) l (x: A) `{Referable A},
+  last_error l = Some x ->
+  exists x', find (ref x) l = Some x'.
+Proof.
+  intros. apply last_in in H0. induction l. crush.
+  destruct H0. subst; eexists; eauto. simpl. crush.
+  crush. destruct beq_id_dec with (ref x) (ref a).
+  eexists; crush.
+  exists x0. rewrite not_eq_beq_id_false; eauto. 
+Qed.
 
 Lemma last_refinement_find: forall C R,
   last_refinement C = Some R ->
@@ -144,14 +168,12 @@ Lemma last_refinement_find: forall C R,
 Proof.
   Print find_refinement.
   intros.
-  destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
-  unfold last_refinement in H. decompose_exs.
-  exists x. apply R_Find with C (ref R) (refinements_of C); auto.
-  rewrite e in H. apply last_in in e.
-  lets ?H: refinements_same_name C. rewrite Forall_forall in H0.
-  apply H0 in e. crush.
-  rewrite e in H. destruct x. simpl in *. destruct r. destruct R. inversion H. subst.
-  apply last_in in e. SearchAbout find In.
+  apply last_error_refinement in H. decompose_exs. destruct H.
+   lets ?H: refinements_same_name C.
+  rewrite Forall_forall in H1. eapply last_find in H. decompose_exs.
+  lets ?H: H. apply find_ref_inv in H.
+  apply find_in in H2. apply H1 in H2. subst.
+
 (* preciso que as feats sejam unicas *)
 Admitted.
 
@@ -399,11 +421,14 @@ Ltac unify_fields :=
   end.
 
 Ltac unifall :=
-  repeat (decompose_exs || inv_decl || elim_eqs || inv_refname
+  repeat (decompose_exs || inv_decl || elim_eqs || inv_refname || inv_crefine
   || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
   || unify_find_refinement' || unify_find_refinement
   || unify_returnType || unify_fargsType || unify_pred
+  || lastref_samename
   || mtypes_ok  || Forall_find_tac).
+
+
 
 Ltac ecrush := unifall; eauto; crush; eauto.
 (* Methods OK Lemmas *)
@@ -453,6 +478,13 @@ Ltac mtype_OK m :=
       eapply methodRefinement_OK in H1; eauto; inversion H1; subst; sort; clear H1
   end.
 
+Ltac last_OK R :=
+  match goal with
+  | [ H: last_refinement ?C = Some R |- _ ] => 
+    lets ?H: H; apply last_refinement_in in H; decompose_exs; destruct H as (H & ?H & ?H);
+    apply ClassesRefinementOK' in H; inversion H; clear H; simpl in *; unifall; sort
+  end.
+
 
 Lemma last_refinement_dec:forall C,
   {exists R, last_refinement C = Some R} + {last_refinement C = None}.
@@ -484,9 +516,7 @@ Proof.
   intros; class_OK C.
   destruct last_refinement_dec with C. unifall.
   destruct mrefine_dec with m (C0 @ feat) Ds D0. unifall.
-  lets ?H: e.
-  apply last_refinement_in_dom in e; unifall.
-  apply ClassesRefinementOK in e; inversion e; unifall;
+  last_OK (C0 @ feat). unifall.
   eapply methods_same_signature'; eauto.
   find_dec_tac Ms m; unifall.
   ecrush; eapply mty_ok; ecrush.
