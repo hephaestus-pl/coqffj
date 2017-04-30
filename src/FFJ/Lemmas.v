@@ -243,6 +243,17 @@ Proof.
   unify_pred. eapply IHmnotin_refinement; eauto.
 Qed.
 
+Ltac notin_mtyper :=
+  match goal with
+  |[H: mnotin_refinement ?m ?R,
+    H1: mtype_r(?m, ?R) = ?Ds ~> ?D |- _ ] => 
+    false; apply (mnotin_last_notmtyper _ _ H H1) with Ds D
+  |[H: last_refinement ?C = Some ?S,
+    H1: mnotin_last_refinement ?m ?C,
+    H2: mtype_r(?m, ?S) = ?Ds ~> ?D |- _ ] => 
+    false; apply H1 in H; apply mnotin_last_notmtyper with S m Ds D in H; contradiction
+  end.
+
 (* Auxiliary Lemmas *)
 (* mtype / MType_OK lemmas *)
 Lemma unify_returnType' : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noDupfargs ret,
@@ -253,10 +264,7 @@ Lemma unify_returnType' : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs n
   D = C0.
 Proof.
   induction 1; crush. 
-  - false.  
-
- destruct H4 with S; eauto; inversion H1; crush.
-destruct H4 with S. eauto. 
+  - notin_mtyper.
 Qed.
 
 
@@ -268,6 +276,7 @@ Lemma unify_fargsType : forall Ds D C D0 Fs noDupfs K Ms noDupMds C0 m fargs noD
   Ds = map fargType fargs.
 Proof.
   induction 1; crush.
+  - notin_mtyper. 
 Qed.
 
 
