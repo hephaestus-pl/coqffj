@@ -186,6 +186,15 @@ Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
     find feat Rs = Some RDecl ->
     find_refinement R RDecl.
 
+Definition find_refinement_func (R: RefinementName): option ClassRefinement :=
+    match R with C @ feat =>
+    match refinements_of C with Rs =>
+    match find feat Rs with
+    | Some RDecl => Some RDecl
+    | None => None
+    end end end.
+Hint Unfold find_refinement_func.
+
 Lemma refinements_same_name: forall C,
   Forall (fun R => C = (class_name R)) (refinements_of C).
 Proof.
@@ -207,4 +216,28 @@ destruct CR as [r]; destruct r; simpl in *.
   specialize H with (CRefine (c0 @ f) fDecls n c mDecls n0 mRefines n1).
   split. apply find_in in H1. apply H in H1. auto.
   apply find_ref_inv in H1. eauto.
+Qed.
+
+Lemma find_refinement_reflected: forall R CR,
+  find_refinement R CR <-> find_refinement_func R = Some CR.
+Proof.
+  intros. split. intros.
+  destruct H. crush.
+  intros.
+  unfold find_refinement_func in H. destruct R.
+  destruct find_dec with (refinements_of c) f. destruct e. rewrite H0 in H.
+  eapply R_Find; crush. rewrite e in H. inversion H.
+Qed.
+
+Lemma find_refinement_dec: forall R,
+  {exists CR, find_refinement R CR} + {forall CR, ~find_refinement R CR}.
+Proof.
+  intros.
+  assert ({exists CR', find_refinement_func R = Some CR'} + {find_refinement_func R = None}).
+  destruct R.
+  destruct find_dec with (refinements_of c) f;  unfold find_refinement_func.
+  left.  destruct e. eexists; crush.
+  right. crush.
+  destruct H. left. destruct e. exists x. apply find_refinement_reflected; auto.
+  right. intros_all. apply find_refinement_reflected in H. crush.
 Qed.
