@@ -233,19 +233,15 @@ Ltac solve_first_pred :=
   end.
 
 
-Lemma mnotin_last_notmtyper : forall R m C,
-  mnotin_last_refinement m C ->
-  last_refinement C = Some R ->
+Lemma mnotin_last_notmtyper : forall R m,
+  mnotin_refinement m R ->
   forall Ds D, ~mtype_r(m, R) = Ds ~> D.
 Proof.
-  intros_all. lets ?H: H0. Check last_in.
-  apply last_refinement_find in H2. decompose_exs. inv_decl. unify_find_refinement'.
-  apply ClassesRefinementOK in H2.
-  induction H with R.
- inversion H2; subst; clear H2; sort.
-  unify_find_refinement. destruct H5 with P; crush.
-  unify_find_refinement.
-Admitted.
+  intros_all. gen Ds D.
+  induction H; let X:=fresh "H" in intros Ds D X; induction X;unify_find_refinement; crush.
+  destruct H2 with S; crush.
+  unify_pred. eapply IHmnotin_refinement; eauto.
+Qed.
 
 (* Auxiliary Lemmas *)
 (* mtype / MType_OK lemmas *)

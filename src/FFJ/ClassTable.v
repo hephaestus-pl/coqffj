@@ -115,14 +115,16 @@ Inductive rfields : ClassName + RefinementName -> [FieldDecl] -> Prop :=
 *)
 
 Inductive mnotin_refinement (m: id) (R: RefinementName) : Prop :=
-  | notin_lasti : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+  | notin_first : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
+              find m mRefines = None ->
               first_refinement R ->
               mnotin_refinement m R
   | notin_pred : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
               find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
+              find m mRefines = None ->
               pred R S -> 
               mnotin_refinement m S ->
               mnotin_refinement m R.
