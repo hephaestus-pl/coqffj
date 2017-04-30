@@ -162,6 +162,7 @@ Proof.
   exists x0. rewrite not_eq_beq_id_false; eauto. 
 Qed.
 
+(*
 Lemma last_refinement_find: forall C R,
   last_refinement C = Some R ->
   exists CR, find_refinement R CR.
@@ -176,7 +177,7 @@ Proof.
 
 (* preciso que as feats sejam unicas *)
 Admitted.
-
+*)
 
 
 Lemma pred_det: forall R R' S,
@@ -303,11 +304,7 @@ Lemma exists_mbody: forall C D Cs m,
 Proof.
   induction 1; eauto.
   - exists (refs fargs) e; repeat (split; eauto); crush.
-    eapply mbody_ok; eauto. intros_all. 
-    eapply mbodyr_mtyper in H3. destruct H3. repeat decompose_exs. eauto.
-  - crush; eexists; eauto. eexists. split. eapply mbody_no_override; eauto.
-    intros_all. eapply mbodyr_mtyper in H7. repeat decompose_exs; eauto.
-    split; eauto.
+  - crush; eexists; eauto.
   - edestruct exists_mbody_r; eauto. crush.
     do 2 eexists. split. eapply mbody_last; crush; eauto. eauto.
 Qed.
