@@ -494,8 +494,8 @@ Proof.
   destruct (last_refinement C); crush. left; eexists; eauto.
 Qed.
 
-Lemma mrefine_dec: forall m R Ds D0,
-  {exists Ds D0, mtype_r(m, R) = Ds ~> D0} + {~mtype_r(m, R) = Ds ~> D0}.
+Lemma mrefine_dec: forall m R,
+  (exists Ds D0, mtype_r(m, R) = Ds ~> D0) \/ mnotin_refinement m R.
 Proof.
 Admitted.
 
@@ -524,19 +524,16 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
 Proof.
   intros; class_OK C.
   destruct last_refinement_dec with C. unifall.
-  destruct mrefine_dec with m (C @ feat) Ds D0. unifall.
-  last_OK (C @ feat). 
-  eapply methods_same_signature'; eauto.
-  edestruct mtyper_super_mtype; ecrush.
-  find_dec_tac Ms m; unifall.
-  ecrush; eapply mty_ok; ecrush. (*
-  ecrush; eapply mty_no_override; ecrush.
-  
- admit.
-  find_dec_tac Ms m; unifall.
-  ecrush; eapply mty_ok; ecrush.
-  ecrush; eapply mty_no_override; ecrush. *)
-Admitted.
+  - destruct mrefine_dec with m (C @ feat). unifall.
+    * eapply methods_same_signature'; eauto.
+      edestruct mtyper_super_mtype; ecrush.
+    * find_dec_tac Ms m; unifall.
+      + ecrush; eapply mty_ok; ecrush.
+      + eapply mty_no_override; ecrush.
+  - find_dec_tac Ms m; unifall.
+    * ecrush; eapply mty_ok; ecrush.
+    * eapply mty_no_override; ecrush.
+Qed.
 
 (* Subtype Lemmas *)
 
