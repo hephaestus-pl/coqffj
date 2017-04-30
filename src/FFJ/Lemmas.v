@@ -363,8 +363,7 @@ Ltac unify_fargsType :=  match goal with
   | [H: mtype( ?m, ?C)= ?Ds ~> ?D,
      H1: find ?C _ = Some (CDecl ?C _ _ _ _ ?Ms _),
      H2: find ?m ?Ms = Some (MDecl _ ?m ?fargs _ _),
-     H3: last_refinement ?C = Some ?R,
-     H4: ~mtype_r(?m, ?R) = ?Ds ~> ?D |- _ ] => lets ?H: unify_fargsType H H1 H2 H3 H4; subst
+     H3:  mnotin_last_refinement ?m ?C |- _ ] => lets ?H: unify_fargsType H H1 H2 H3; subst
   end.
 
 Ltac superclass_defined_or_obj C :=
@@ -498,6 +497,14 @@ Lemma mrefine_dec: forall m R Ds D0,
 Proof.
 Admitted.
 
+Lemma mtyper_super_mtype: forall R Ds D0 Ds' D0' C D Fs noDupfs K Ms noDupMds m,
+  find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+  last_refinement C = Some R ->
+  mtype(m, D) = Ds ~> D0 ->
+  mtype_r(m, R) = Ds' ~> D0' ->
+  Ds = Ds' /\ D0 = D0'.
+Admitted.
+
 Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
   find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
   last_refinement C = Some R ->
@@ -515,17 +522,18 @@ Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
 Proof.
   intros; class_OK C.
   destruct last_refinement_dec with C. unifall.
-  destruct mrefine_dec with m (C0 @ feat) Ds D0. unifall.
-  last_OK (C0 @ feat). unifall.
+  destruct mrefine_dec with m (C @ feat) Ds D0. unifall.
+  last_OK (C @ feat). 
   eapply methods_same_signature'; eauto.
+  edestruct mtyper_super_mtype; ecrush.
   find_dec_tac Ms m; unifall.
-  ecrush; eapply mty_ok; ecrush.
+  ecrush; eapply mty_ok; ecrush. (*
   ecrush; eapply mty_no_override; ecrush.
   
  admit.
   find_dec_tac Ms m; unifall.
   ecrush; eapply mty_ok; ecrush.
-  ecrush; eapply mty_no_override; ecrush.
+  ecrush; eapply mty_no_override; ecrush. *)
 Admitted.
 
 (* Subtype Lemmas *)
@@ -559,12 +567,10 @@ Lemma last_refinement_fields: forall C CR CD,
   last_refinement C = Some CR ->
   exists fs, fields_refinement CR fs.
 Proof.
-  intros. lets ?H: H0. inv_decl.
-  class_OK C. apply last_refinement_in in H0. unifall.
-  apply ClassesRefinementOK' in H0.
-  inversion H0; unifall; eexists.
-  econstructor; eauto.
- solve [econstructor; eauto].
+  intros. inv_decl.
+  class_OK C.
+  last_OK CR;
+  solve [eexists; econstructor; eauto].
 Qed.
 
 Lemma subtype_fields: forall C D fs ,
