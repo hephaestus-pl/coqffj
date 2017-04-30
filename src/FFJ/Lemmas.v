@@ -702,13 +702,13 @@ Proof.
   mtype_OK m. exists C E0. unifall; eauto.
   Case "mbdy_no_override".
     inversion H; ecrush; sort.
-    exists x x0; ecrush.
-    false. apply exists_mbody_r in H7. ecrush.
+    exists x x0; ecrush. 
+    notin_mtyper.
   Case "mbdy_last".
     inversion H; ecrush; sort.
-    false. apply mbodyr_mtyper in H3. ecrush.
-    apply last_refinement_same_name in H2; simpl in *; subst.
-    eapply A14'; ecrush.
+    - apply mbodyr_mtyper in H2. unifall. notin_mtyper.
+    - apply mbodyr_mtyper in H2. unifall. notin_mtyper.
+    - eapply A14'; ecrush.
 Qed.
 
 
