@@ -32,25 +32,6 @@ Inductive pred: RefinementName -> RefinementName -> Prop :=
     nth_error Rs n = Some CR ->
     pred (C @ feat) (class_name CR @ ref CR).
 
-(* pred is just the inverse of succ
-Inductive succ (Cl: ClassName + RefinementName) (R: RefinementName): Prop :=
-  | C_pred: 
-    pred R Cl ->
-    succ Cl R.
-*)
-(* Refinement is the transitive closure of succ 
-Reserved Notation "C <<: D" (at level 40).
-Inductive Refinement: ClassName + RefinementName -> RefinementName -> Prop :=
-  | R_Trans: forall C C' C'',
-    succ C C' ->
-    succ (inr C') C'' ->
-    C <<: C''
-  | R_succ : forall C C',
-    succ C C' ->
-    C <<: C'
-where "C <<: C'" := (Refinement C C').
-*)
-
 Definition last_refinement (C: ClassName): option RefinementName :=
   match last_error (refinements_of C) with
   | Some R => Some (class_name R @ ref R)
@@ -58,12 +39,6 @@ Definition last_refinement (C: ClassName): option RefinementName :=
   end.
 
 Definition first_refinement (R: RefinementName) : Prop := forall S, ~pred R S.
-(*
-Lemma last_refinement_correct: forall C R,
-  last_refinement C = Some R <-> no_suc (inr (class_name R @ ref R)).
-Proof. (* Need to impose that there are no duplicated features *)
-Admitted.
-*)
 
 Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
   | F_Refine: forall R S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
@@ -98,21 +73,6 @@ Inductive fields : ClassName -> [FieldDecl] -> Prop :=
 Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"| Case_aux c "F_Decl_NoRefine"].
-
-(*
-Inductive rfields : ClassName + RefinementName -> [FieldDecl] -> Prop :=
-  | RF_Decl : forall C D fs noDupfs K mds noDupMds fs',
-     find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
-     fields D fs' ->
-     NoDup (refs (fs' ++ fs)) ->
-     rfields (inl C) (fs'++fs)  
-  | RF_Refine : forall R P fs noDupfs K mds noDupMds fs' Mrs noDupMrs,
-     find_refinement R (CRefine R fs noDupfs K mds noDupMds Mrs noDupMrs) ->
-     pred R P ->
-     rfields P fs' ->
-     NoDup (refs (fs' ++ fs)) ->
-     rfields (inr R) (fs'++fs).
-*)
 
 Inductive mnotin_refinement (m: id) (R: RefinementName) : Prop :=
   | notin_first : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
@@ -281,15 +241,4 @@ Proof.
   eauto.
 Qed.
 
-(*
-Lemma refinement_same_cname : forall R Cl,
-  Cl <<: R ->
-  class_name R = class_name Cl.
-Proof.
-  destruct 1.  apply pred_same_cname in H.
-  repeat match goal with
-  | H: pred ?R ?C |- _ => apply pred_same_cname in H
-  end; crush.
-Qed. 
-*)
 Hint Resolve find_class_same_ref pred_same_cname.
