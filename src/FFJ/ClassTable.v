@@ -32,10 +32,20 @@ Inductive pred: RefinementName -> RefinementName -> Prop :=
     nth_error Rs n = Some CR ->
     pred (C @ feat) (class_name CR @ ref CR).
 
+Fixpoint pred_func (R: RefinementName): option RefinementName :=
+  match R with C @ feat =>
+  match find_where feat (refs (refinements_of C)) with
+  | None => None
+  | Some 0 => None
+  | Some (S n) => match nth_error (refinements_of C) n with
+    | None => None
+    | Some CR => Some (class_name CR @ ref CR)
+  end end end.
+
 Definition last_refinement (C: ClassName): option RefinementName :=
   match last_error (refinements_of C) with
   | Some R => Some (class_name R @ ref R)
-  | NOne => None
+  | None => None
   end.
 
 Definition first_refinement (R: RefinementName) : Prop := forall S, ~pred R S.
@@ -91,7 +101,24 @@ Inductive mnotin_refinement (m: id) (R: RefinementName) : Prop :=
 
 Definition mnotin_last_refinement (m: id) (C: ClassName) :=
   forall R, last_refinement C = Some R -> mnotin_refinement m R.
+SearchAbout bool.
 
+(*
+Fixpoint mnotin_refinement_bool (m:id) (R: RefinementName): bool :=
+  match find_refinement_func R with 
+  | None => false
+  | Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) =>
+  match find m mDecls with
+  | Some _ => false
+  | None => match find m mRefines with
+    | Some _ => false
+    | None => match pred_func R with
+      | None => true
+      | Some P => mnotin_refinement_bool m P
+      end
+    end
+  end end.
+*)
 
 Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=

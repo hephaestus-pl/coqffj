@@ -47,6 +47,7 @@ Ltac decompose_exs :=
 Ltac inv_decl :=
   match goal with
   | [ MD : MethodDecl |- _ ] => destruct MD as [?C ?m ?fargs ?noDupFargs ?e]
+  | [ MR : MethodRefinement |- _ ] => destruct MR as [?C ?m ?fargs ?noDupFargs ?e]
   | [ FD : FieldDecl |- _ ] => destruct FD as [?C ?f]
   | [ CD : ClassDecl |- _ ] => destruct CD as [?C ?D ?fs ?noDupfs ?K ?Ms ?noDupMs]
   | [ CR : ClassRefinement |- _ ] => destruct CR as [?R ?fs ?noDupfs ?Kr ?Ms ?noDupMs ?Mrs ?noDupMrs]
@@ -232,27 +233,56 @@ Ltac solve_first_pred :=
   match goal with
   | [H: pred ?R ?S, H1: first_refinement ?R |- _ ] => unfold first_refinement in H1; specialize H1 with S; contradiction
   end.
+SearchAbout find ref.
+Ltac unify_find H :=
+  match type of H with
+  | find ?x ?xs = Some ?y => let H1:=fresh "H" in assert (ref y = x) as H1 by (apply (find_ref_inv _ _ _ H)); simpl in H1; subst
+  end.
 
+Lemma pred_find: forall R S,
+  pred R S ->
+  exists CR, find_refinement S CR.
+Admitted.
+Hint Resolve pred_find.
 
-Lemma mnotin_last_notmtyper : forall R m,
-  mnotin_refinement m R ->
-  forall Ds D, ~mtype_r(m, R) = Ds ~> D.
+Lemma notmtyper_mnotin : forall m R CR,
+    find_refinement R CR ->
+    exists Ds D, mtype_r(m, R) = Ds ~> D ->
+    ~mnotin_refinement m R.
 Proof.
-  intros_all. gen Ds D.
-  induction H; let X:=fresh "H" in intros Ds D X; induction X;unify_find_refinement; crush.
+Admitted.
+
+Lemma mnotin_notmtyper : forall R m CR,
+  find_refinement R CR ->
+  (mnotin_refinement m R <->
+  forall Ds D, ~mtype_r(m, R) = Ds ~> D).
+Proof.
+  intros_all. split. intros_all. gen CR Ds D.
+  induction H0; let X:=fresh "H" in intros ?CR ?H Ds D X; induction X; subst; repeat unify_find_refinement; crush.
   destruct H2 with S; crush.
-  unify_pred. eapply IHmnotin_refinement; eauto.
-Qed.
+  unify_pred. lets ?H: H2. apply pred_find in H2; decompose_exs.
+  eapply IHmnotin_refinement; eauto.
+
+  intros. inv_decl.
+  find_dec_tac Ms m. decompose_exs. inv_decl. unify_find_refinement'. unify_find H1.
+  assert (mtype_r(m, R) = (map fargType fargs) ~> C). eapply mtyr_decl_ok; eauto. false.
+  apply H0 in H2; contradiction.
+
+  find_dec_tac Mrs m. decompose_exs. inv_decl. unify_find_refinement'. unify_find H2.
+  assert (mtype_r(m, R) = (map fargType fargs) ~> C). eapply mtyr_refinement_ok; eauto. false.
+  apply H0 in H3. contradiction.
+  admit. (* Precisamos de mnotin_refinement_dec *)
+Admitted.
 
 Ltac notin_mtyper :=
   match goal with
   |[H: mnotin_refinement ?m ?R,
     H1: mtype_r(?m, ?R) = ?Ds ~> ?D |- _ ] => 
-    false; apply (mnotin_last_notmtyper _ _ H H1) with Ds D
+    false; apply (mnotin_notmtyper _ _ H H1) with Ds D
   |[H: last_refinement ?C = Some ?S,
     H1: mnotin_last_refinement ?m ?C,
     H2: mtype_r(?m, ?S) = ?Ds ~> ?D |- _ ] => 
-    false; apply H1 in H; apply mnotin_last_notmtyper with S m Ds D in H; contradiction
+    false; apply H1 in H; apply mnotin_notmtyper with S m Ds D in H; contradiction
   end.
 
 (* Auxiliary Lemmas *)
