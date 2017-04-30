@@ -595,7 +595,8 @@ Proof.
     destruct X with (f:= last_refinement C). destruct s as [CR].
     lets ?H: H. lets ?H: e.
     eapply last_refinement_fields in H; eauto. destruct H as [fs'].
-    apply last_refinement_in_dom in H2. destruct H2 as [CRD].
+    last_OK CR.
+    class_OK C; solve [eexists; econstructor; ecrush].
     class_OK C; solve [eexists; econstructor; ecrush].
     class_OK C; solve [eexists; econstructor; ecrush].
 Qed.
