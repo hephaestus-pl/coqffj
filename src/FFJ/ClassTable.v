@@ -223,9 +223,11 @@ Inductive introduce (m: id) (R: RefinementName): Prop :=
     pred R S ->
     mnotin_refinement m S ->
     introduce m R
-  | I_Class : forall C,
+  | I_Class : forall C feat D Fs noDupfs K Ms noDupMds,
     first_refinement R ->
-    (forall Ds D0, ~ mtype(m, class_name C) = Ds ~> D0) ->
+    R = C @ feat ->
+    find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+    find m Ms = None ->
     introduce m R.
 
 Inductive override_r (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
