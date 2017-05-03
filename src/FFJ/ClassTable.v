@@ -101,24 +101,6 @@ Inductive mnotin_refinement (m: id) (R: RefinementName) : Prop :=
 
 Definition mnotin_last_refinement (m: id) (C: ClassName) :=
   forall R, last_refinement C = Some R -> mnotin_refinement m R.
-SearchAbout bool.
-
-(*
-Fixpoint mnotin_refinement_bool (m:id) (R: RefinementName): bool :=
-  match find_refinement_func R with 
-  | None => false
-  | Some (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) =>
-  match find m mDecls with
-  | Some _ => false
-  | None => match find m mRefines with
-    | Some _ => false
-    | None => match pred_func R with
-      | None => true
-      | Some P => mnotin_refinement_bool m P
-      end
-    end
-  end end.
-*)
 
 Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=
@@ -239,17 +221,23 @@ Inductive override (m: id) (D: ClassName) (Cs: [ClassName]) (C0: ClassName): Pro
 Inductive introduce (m: id) (R: RefinementName): Prop :=
   | I_Refinement : forall S,
     pred R S ->
-    (forall Ds D0, ~ mtype_r(m, S) = Ds ~> D0) ->
+    mnotin_refinement m S ->
     introduce m R
-  | I_Class : forall C feat,
-    first_refinement R -> R = C @ feat ->
-    (forall Ds D0, ~ mtype(m, C) = Ds ~> D0) ->
+  | I_Class : forall C,
+    first_refinement R ->
+    (forall Ds D0, ~ mtype(m, class_name C) = Ds ~> D0) ->
     introduce m R.
 
-Inductive extend (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
-  | E_Refinement : 
-    (forall Ds D0, mtype_r(m, R) = Ds ~> D0 -> (Cs = Cs /\ C0 = D0)) ->
-    extend m R Cs C0.
+Inductive override_r (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
+  | O_Refinement : forall S,
+    pred R S ->
+    (forall Ds D0, mtype_r(m, S) = Ds ~> D0 -> (Cs = Ds /\ C0 = D0)) ->
+    override_r m R Cs C0
+  | O_Class: forall C,
+    first_refinement R ->
+    (forall Ds D0, mtype(m, class_name C) = Ds ~> D0 -> (Cs = Ds /\ C0 = D0)) ->
+    override_r m R Cs C0.
+
 
 Lemma find_class_same_ref: forall C CD,
   find C CT = Some CD ->

@@ -121,7 +121,6 @@ Lemma last_refinement_same_name: forall C R,
   class_name R = C.
 Proof.
   intros. apply last_error_refinement in H. decompose_exs. destruct H.
-  SearchAbout last_error.
   apply last_in in H.
   lets ?H: refinements_same_name C.
   rewrite Forall_forall in H1. eapply H1 in H.
@@ -233,46 +232,22 @@ Ltac solve_first_pred :=
   match goal with
   | [H: pred ?R ?S, H1: first_refinement ?R |- _ ] => unfold first_refinement in H1; specialize H1 with S; contradiction
   end.
-SearchAbout find ref.
+
 Ltac unify_find H :=
   match type of H with
   | find ?x ?xs = Some ?y => let H1:=fresh "H" in assert (ref y = x) as H1 by (apply (find_ref_inv _ _ _ H)); simpl in H1; subst
   end.
 
-Lemma pred_find: forall R S,
-  pred R S ->
-  exists CR, find_refinement S CR.
-Admitted.
-Hint Resolve pred_find.
-
-Lemma notmtyper_mnotin : forall m R CR,
-    find_refinement R CR ->
-    exists Ds D, mtype_r(m, R) = Ds ~> D ->
-    ~mnotin_refinement m R.
-Proof.
-Admitted.
-
-Lemma mnotin_notmtyper : forall R m CR,
-  find_refinement R CR ->
-  (mnotin_refinement m R <->
+Lemma mnotin_notmtyper : forall R m,
+  (mnotin_refinement m R ->
   forall Ds D, ~mtype_r(m, R) = Ds ~> D).
 Proof.
-  intros_all. split. intros_all. gen CR Ds D.
-  induction H0; let X:=fresh "H" in intros ?CR ?H Ds D X; induction X; subst; repeat unify_find_refinement; crush.
+  intros_all. gen Ds D.
+  induction H; let X:=fresh "H" in intros Ds D X; induction X; subst; repeat unify_find_refinement; crush.
   destruct H2 with S; crush.
-  unify_pred. lets ?H: H2. apply pred_find in H2; decompose_exs.
+  unify_pred. lets ?H: H2. apply pred_in_dom in H2; decompose_exs.
   eapply IHmnotin_refinement; eauto.
-
-  intros. inv_decl.
-  find_dec_tac Ms m. decompose_exs. inv_decl. unify_find_refinement'. unify_find H1.
-  assert (mtype_r(m, R) = (map fargType fargs) ~> C). eapply mtyr_decl_ok; eauto. false.
-  apply H0 in H2; contradiction.
-
-  find_dec_tac Mrs m. decompose_exs. inv_decl. unify_find_refinement'. unify_find H2.
-  assert (mtype_r(m, R) = (map fargType fargs) ~> C). eapply mtyr_refinement_ok; eauto. false.
-  apply H0 in H3. contradiction.
-  admit. (* Precisamos de mnotin_refinement_dec *)
-Admitted.
+Qed.
 
 Ltac notin_mtyper :=
   match goal with
@@ -535,6 +510,13 @@ Lemma mtyper_super_mtype: forall R Ds D0 Ds' D0' C D Fs noDupfs K Ms noDupMds m,
   mtype(m, D) = Ds ~> D0 ->
   mtype_r(m, R) = Ds' ~> D0' ->
   Ds = Ds' /\ D0 = D0'.
+Proof.
+  intros. lets ?H: H0.
+  apply last_refinement_in in H0. unifall. destruct H0. destruct H3.
+  lets ?H: RT_wellformed.
+  rewrite Forall_forall in H6. apply H6 in H0. inversion H0; unifall.
+  
+ unfold last_refinement in H0. app
 Admitted.
 
 Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
@@ -543,9 +525,8 @@ Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
   mtype_r(m, R) = Ds ~> D0 ->
   mtype(m, C) = Ds ~> D0.
 Proof.
-  intros; class_OK C; unifall.
-  induction H1.
-Admitted.
+  eauto.
+Qed.
 
 Lemma methods_same_signature: forall C D Fs noDupfs K Ms noDupMds Ds D0 m,
     find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
