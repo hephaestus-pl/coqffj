@@ -578,9 +578,11 @@ Lemma last_refinement_fields: forall C CR CD,
   exists fs, fields_r CR fs.
 Proof.
   intros. inv_decl.
-  class_OK C.
-  last_OK CR;
-  solve [eexists; econstructor; eauto].
+  class_OK C. 
+  last_OK CR.
+  match goal with
+  | [H: NoDup_fields ?R |- _] => inversion H; solve [eexists; econstructor; eauto]
+  end.
 Qed.
 
 Lemma subtype_fields: forall C D fs ,
@@ -604,7 +606,6 @@ Proof.
     lets ?H: H. lets ?H: e.
     eapply last_refinement_fields in H; eauto. destruct H as [fs'].
     last_OK CR.
-    class_OK C; solve [eexists; econstructor; ecrush].
     class_OK C; solve [eexists; econstructor; ecrush].
     class_OK C; solve [eexists; econstructor; ecrush].
 Qed.

@@ -204,23 +204,27 @@ Inductive CType_OK: ClassDecl -> Prop :=
             NoDup (refs (fdecl ++ Fs)) ->
             CType_OK (CDecl C D Fs noDupfs K Ms noDupMds).
 
+Inductive NoDup_fields: RefinementName -> Prop :=
+  | NoDup_Pred: forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines P fs',
+    find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+    pred R P ->
+    fields_r P fs' ->
+    NoDup (refs (fs' ++ fs))->
+    NoDup_fields R
+  | NoDup_First: forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines fs',
+    find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+    first_refinement R ->
+    fields (class_name R) fs' ->
+    NoDup (refs (fs' ++ fs))->
+    NoDup_fields R.
+
 Inductive CRType_OK: ClassRefinement -> Prop :=
-    | TR_Refinement : forall R P fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
-            find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
-            pred R P ->
-            fields_r P fs' ->
-            NoDup (refs (fs' ++ fs)) ->
-            Forall (MType_r_OK R) Ms ->
-            Forall (MRType_OK R) (mRefines) ->
-            CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines)
-    | TR_Class : forall R C fs noDupfs K Ms noDupMds fs' mRefines noDupmRefines,
-            find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
-            first_refinement R->
-            fields C fs' ->
-            NoDup (refs (fs' ++ fs)) ->
-            Forall (MType_r_OK R) Ms ->
-            Forall (MRType_OK R) (mRefines) ->
-            CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
+  | TR_Refinement : forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines,
+      find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+      NoDup_fields R ->
+      Forall (MType_r_OK R) Ms ->
+      Forall (MRType_OK R) (mRefines) ->
+      CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
