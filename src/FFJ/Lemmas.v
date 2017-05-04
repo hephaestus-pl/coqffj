@@ -454,7 +454,7 @@ Qed.
 Lemma methodDecl_OK' :forall R D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs C0 m fargs noDupfargs ret,
   find m Ms = Some (MDecl C0 m fargs noDupfargs ret) ->
   find_refinement R (CRefine D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs) ->
-  MType_CRefinement_OK R (MDecl C0 m fargs noDupfargs ret).
+  MType_r_OK R (MDecl C0 m fargs noDupfargs ret).
 Proof.
   intros. unifall. apply ClassesRefinementOK in H0; inversion H0;
   match goal with
@@ -516,7 +516,7 @@ Proof.
   lets ?H: RT_wellformed.
   rewrite Forall_forall in H6. apply H6 in H0. inversion H0; unifall.
   
- unfold last_refinement in H0. app
+ unfold last_refinement in H0.
 Admitted.
 
 Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
