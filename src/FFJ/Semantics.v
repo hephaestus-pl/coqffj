@@ -178,7 +178,7 @@ Inductive MType_r_OK : RefinementName -> MethodDecl -> Prop :=
             introduce m R ->
             MType_r_OK R (MDecl C0 m fargs noDupFargs e0).
 
-Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
+Inductive MRType_r_OK: RefinementName -> MethodRefinement -> Prop :=
   | TR_Method : forall R C C0 E0 xs Cs e0 feat fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines m fargs noDupFargs,
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
@@ -189,7 +189,7 @@ Inductive MRType_OK: RefinementName -> MethodRefinement -> Prop :=
             find m mRefines = Some (MRefine C0 m fargs noDupFargs e0) ->
             find m Ms = None ->
             override_r m R Cs C0 ->
-            MRType_OK R (MRefine C0 m fargs noDupFargs e0).
+            MRType_r_OK R (MRefine C0 m fargs noDupFargs e0).
 
 Inductive CType_OK: ClassDecl -> Prop :=
   | T_Class : forall C D Fs noDupfs K Ms noDupMds Cfargs Dfargs fdecl,
@@ -223,7 +223,7 @@ Inductive CRType_OK: ClassRefinement -> Prop :=
       find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
       NoDup_fields R ->
       Forall (MType_r_OK R) Ms ->
-      Forall (MRType_OK R) (mRefines) ->
+      Forall (MRType_r_OK R) (mRefines) ->
       CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
 
 (* Hypothesis for ClassTable sanity *)

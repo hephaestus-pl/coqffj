@@ -63,7 +63,7 @@ Ltac Forall_find_tac :=
 Ltac mtypes_ok :=
   match goal with
   | [H: MType_OK _ _ |- _ ] => destruct H; subst; sort; clear H
-  | [H: MRType_OK _ _ |- _ ] => destruct H; subst; sort; clear H
+  | [H: MRType_r_OK _ _ |- _ ] => destruct H; subst; sort; clear H
   end.
 
 Ltac elim_eqs :=
@@ -465,7 +465,7 @@ Qed.
 Lemma methodRefinement_OK :forall R D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs C0 m fargs noDupfargs ret,
   find m Mrs = Some (MRefine C0 m fargs noDupfargs ret) ->
   find_refinement R (CRefine D0 Fs noDupfs K Ms noDupMds Mrs noDupMrs) ->
-  MRType_OK R (MRefine C0 m fargs noDupfargs ret).
+  MRType_r_OK R (MRefine C0 m fargs noDupfargs ret).
 Proof.
   intros. unifall. apply ClassesRefinementOK in H0; inversion H0;
   match goal with
@@ -511,12 +511,7 @@ Lemma mtyper_super_mtype: forall R Ds D0 Ds' D0' C D Fs noDupfs K Ms noDupMds m,
   mtype_r(m, R) = Ds' ~> D0' ->
   Ds = Ds' /\ D0 = D0'.
 Proof.
-  intros. lets ?H: H0.
-  apply last_refinement_in in H0. unifall. destruct H0. destruct H3.
-  lets ?H: RT_wellformed.
-  rewrite Forall_forall in H6. apply H6 in H0. inversion H0; unifall.
-  
- unfold last_refinement in H0.
+  intros. last_OK R. remember (C@feat1). induction H2; unifall.
 Admitted.
 
 Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
