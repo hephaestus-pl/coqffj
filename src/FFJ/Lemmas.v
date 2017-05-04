@@ -62,25 +62,34 @@ Ltac Forall_find_tac :=
 
 Ltac mtypes_ok :=
   match goal with
-  | [H: MType_OK _ _ |- _ ] => destruct H; subst; sort; clear H
-  | [H: MRType_r_OK _ _ |- _ ] => destruct H; subst; sort; clear H
-  end.
-
-Ltac elim_eqs :=
-  match goal with
-  | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inversion H1; clear H1; subst
+  | [H: MType_OK _ _ |- _ ] => inversion H; subst; sort; clear H
+  | [H: MType_r_OK _ _ |- _ ] => inversion H; subst; sort; clear H
+  | [H: MRType_r_OK _ _ |- _ ] => inversion H; subst; sort; clear H
   end.
 
 Ltac inv_refname :=
   match goal with
   | [H: ?C @ ?feat = ?D @ ?feat' |- _ ] => inversion H; subst; clear H
   end.
-
+Check MDecl.
 Ltac inv_crefine:=
   match goal with
   | [H: CRefine _ _ _ _ _ _ _ _ = CRefine _ _ _ _ _ _ _ _ |- _ ] => inversion H; subst; clear H
+  | [H: MDecl _ _ _ _ _ = MDecl _ _ _ _ _ |- _] => inversion H; subst; clear H
   end.
 
+Ltac inv_some :=
+  match goal with
+  | [H: Some _ = Some _ |- _ ] => inversion H; clear H
+  end.
+
+Ltac inv_all :=
+  repeat (inv_decl || inv_refname || inv_some || inv_crefine ).
+
+Ltac elim_eqs :=
+  match goal with
+  | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inv_all; clear H1; subst
+  end.
 
 Ltac unify_override :=
   match goal with
@@ -89,7 +98,8 @@ Ltac unify_override :=
 
 Ltac pred_same_name :=
   match goal with
-  | [H: pred ?R ?S |- _ ] => assert (class_name R = class_name S) by (apply (pred_same_cname _ _ H))
+  | [H: pred (?C @ _) (?C @ _) |- _ ] => fail 1
+  | [H: pred ?R ?S |- _ ] => assert (class_name R = class_name S) by (apply (pred_same_cname _ _ H)); inv_decl; subst
   end.
 
 Ltac unify_find_ref :=
@@ -431,7 +441,7 @@ Ltac unifall :=
   || unify_find_ref || unify_override || unify_fields || unify_fields_r 
   || unify_find_refinement' || unify_find_refinement
   || unify_returnType || unify_fargsType || unify_pred
-  || lastref_samename
+  || lastref_samename || pred_same_name
   || mtypes_ok  || Forall_find_tac).
 
 
@@ -511,7 +521,17 @@ Lemma mtyper_super_mtype: forall R Ds D0 Ds' D0' C D Fs noDupfs K Ms noDupMds m,
   mtype_r(m, R) = Ds' ~> D0' ->
   Ds = Ds' /\ D0 = D0'.
 Proof.
-  intros. last_OK R. remember (C@feat1). induction H2; unifall.
+  intros. last_OK R. remember (C@feat1). induction H2;unifall.
+  -  crush.
+  - induction H21; unifall.
+  - crush. 
+  unify_find_refinement. Forall_find_tac. mtypes_ok. unify_find_refinement. lastref_samename. repeat elim_eqs.
+
+
+ gen C Mrs Ms1 feat1 fs0 Fs Ms H7. induction H2; intros; unifall. admit. admit.
+  eapply IHmtype_refinement; unifall.
+  - unify_find_refinement. Check Forall_find. eapply Forall_find in H8; eauto. inversion H8.
+  subst. Print override. edestruct H16; eauto. ecrush.
 Admitted.
 
 Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
