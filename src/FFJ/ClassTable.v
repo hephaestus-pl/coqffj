@@ -50,17 +50,17 @@ Definition last_refinement (C: ClassName): option RefinementName :=
 
 Definition first_refinement (R: RefinementName) : Prop := forall S, ~pred R S.
 
-Inductive fields_refinement : RefinementName -> [FieldDecl] -> Prop :=
+Inductive fields_r : RefinementName -> [FieldDecl] -> Prop :=
   | F_Refine: forall R S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     pred R S ->
     find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-    fields_refinement S fpred ->
+    fields_r S fpred ->
     NoDup (refs (fpred ++ fs)) ->
-    fields_refinement R (fpred ++ fs)
+    fields_r R (fpred ++ fs)
   | F_First: forall R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     first_refinement R ->
     find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-    fields_refinement R fs.
+    fields_r R fs.
 
 Hint Constructors pred.
 Hint Unfold first_refinement.
@@ -70,7 +70,7 @@ Inductive fields : ClassName -> [FieldDecl] -> Prop :=
   | F_Decl : forall C S D fs fs'' noDupfs K mds noDupMds fs', 
      find C CT = Some (CDecl C D fs noDupfs K mds noDupMds) ->
      last_refinement C = Some S ->
-     fields_refinement S fs'' ->
+     fields_r S fs'' ->
      fields D fs' ->
      NoDup (refs (fs' ++ fs ++ fs'')) ->
      fields C (fs' ++ fs ++ fs'')

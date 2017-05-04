@@ -379,23 +379,23 @@ Ltac superclass_defined_or_obj C :=
   end.
 
 
-Lemma fields_refinement_det: forall R f1 f2,
-  fields_refinement R f1 ->
-  fields_refinement R f2 ->
+Lemma fields_r_det: forall R f1 f2,
+  fields_r R f1 ->
+  fields_r R f2 ->
   f1 = f2.
 Proof.
   intros. gen f1.
   induction H0.
   - intros. inversion H3. simpl in *; subst. unify_pred. unify_find_refinement.
-    specialize IHfields_refinement with fpred0; crush.
+    specialize IHfields_r with fpred0; crush.
     subst. solve_first_pred. 
   - intros_all. inversion H1. solve_first_pred. subst.  unify_find_refinement; crush.
 Qed.
 
 
-Ltac unify_fields_refinement :=
+Ltac unify_fields_r :=
   match goal with
-  | [H: fields_refinement ?R ?f1, H1: fields_refinement ?R ?f2 |- _ ] => destruct (fields_refinement_det _ _ _ H H1); clear H1; subst
+  | [H: fields_r ?R ?f1, H1: fields_r ?R ?f2 |- _ ] => destruct (fields_r_det _ _ _ H H1); clear H1; subst
   end.
 
 
@@ -404,7 +404,7 @@ Lemma fields_det: forall C f1 f2,
   fields C f2 ->
   f1 = f2.
 Proof.
-  Hint Resolve fields_obj_nil fields_refinement_det.
+  Hint Resolve fields_obj_nil fields_r_det.
   intros; gen f1.
   fields_cases (induction H0) Case; intros.
   Case "F_Obj".
@@ -413,7 +413,7 @@ Proof.
     destruct H4.
     rewrite obj_notin_dom in H; crush.
     simpl in *; subst. repeat elim_eqs.
-    apply IHfields in H7. subst. unify_fields_refinement. reflexivity.
+    apply IHfields in H7. subst. unify_fields_r. reflexivity.
     elim_eqs.
     inversion H3. subst. crush. subst.
     repeat elim_eqs.
@@ -428,7 +428,7 @@ Ltac unify_fields :=
 
 Ltac unifall :=
   repeat (decompose_exs || inv_decl || elim_eqs || inv_refname || inv_crefine
-  || unify_find_ref || unify_override || unify_fields || unify_fields_refinement 
+  || unify_find_ref || unify_override || unify_fields || unify_fields_r 
   || unify_find_refinement' || unify_find_refinement
   || unify_returnType || unify_fargsType || unify_pred
   || lastref_samename
@@ -575,7 +575,7 @@ Qed.
 Lemma last_refinement_fields: forall C CR CD,
   find C CT = Some CD ->
   last_refinement C = Some CR ->
-  exists fs, fields_refinement CR fs.
+  exists fs, fields_r CR fs.
 Proof.
   intros. inv_decl.
   class_OK C.
