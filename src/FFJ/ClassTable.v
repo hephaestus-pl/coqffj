@@ -231,15 +231,28 @@ Inductive introduce (m: id) (R: RefinementName): Prop :=
     introduce m R.
 
 Inductive override_r (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassName): Prop :=
-  | O_Refinement : forall S,
-    pred R S ->
-    (forall Ds D0, mtype_r(m, S) = Ds ~> D0 -> (Cs = Ds /\ C0 = D0)) ->
-    override_r m R Cs C0
-  | O_Class: forall C,
+  | O_First: forall C feat D Fs noDupfs K Ms noDupMds fargs noDupFargs e0 C1,
     first_refinement R ->
-    (forall Ds D0, mtype(m, class_name C) = Ds ~> D0 -> (Cs = Ds /\ C0 = D0)) ->
+    R = C @ feat ->
+    find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
+    find m Ms = Some (MDecl C0 m fargs noDupFargs e0) ->
+    map fargType fargs = Cs ->
+    C1 = C0 -> (* we get override m D with MType_OK here *)
+    override_r m R Cs C0  
+  | O_Pred_Decl: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Cs' B fargs noDupfargs e,
+    pred R S ->
+    find_refinement S (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
+    map fargType fargs = Cs' ->
+    Cs' = Cs ->
+    B = C0 -> (* we get override m D with MType_CRefinement_OK *)
+    override_r m R Cs C0
+  | O_Pred_Next: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
+    pred R S ->
+    find_refinement S (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find m mDecls = None ->
+    override_r m S Cs C0 ->
     override_r m R Cs C0.
-
 
 Lemma find_class_same_ref: forall C CD,
   find C CT = Some CD ->
