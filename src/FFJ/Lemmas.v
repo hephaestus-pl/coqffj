@@ -255,7 +255,7 @@ Proof.
   intros_all. gen Ds D.
   induction H; let X:=fresh "H" in intros Ds D X; induction X; subst; repeat unify_find_refinement; crush.
   destruct H2 with S; crush.
-  unify_pred. lets ?H: H2. apply pred_in_dom in H2; decompose_exs.
+  unify_pred.
   eapply IHmnotin_refinement; eauto.
 Qed.
 

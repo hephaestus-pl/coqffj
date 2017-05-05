@@ -255,15 +255,6 @@ Proof.
   exact RT_wellformed.
 Qed.
 
-
-Lemma pred_in_dom: forall Cl S,
-  pred S Cl ->
-  exists CD, find_refinement S CD.
-Proof.
-  assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
-  exact RT_wellformed. intros. destruct S. inversion H0. subst.
-Admitted.
-
 Lemma pred_in_dom': forall Cl S,
   pred S Cl ->
   exists CD, find_refinement Cl CD.
@@ -284,7 +275,7 @@ Proof.
   apply filter_In in H2. destruct H2.
   eapply ClassesRefinementOK'; eauto.
 Qed.
-Hint Resolve ClassesRefinementOK  ClassesRefinementOK' pred_in_dom.
+Hint Resolve ClassesRefinementOK  ClassesRefinementOK' pred_in_dom'.
 
 
 Hypothesis ClassesOK: forall C CD, 
