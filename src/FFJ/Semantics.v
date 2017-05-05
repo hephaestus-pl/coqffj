@@ -247,29 +247,31 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
 Hypothesis RT_wellformed:
   Forall (fun CR => CRType_OK CR) RT.
 
-Lemma pred_in_dom: forall Cl S,
-  pred S Cl ->
-  exists CD, find_refinement S CD.
-Proof.
-  assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
-  exact RT_wellformed.
-  induction 1.
-  apply nth_error_In in H2. unfold refinements_of in H0. subst.
-  apply filter_In in H2.
-Admitted.
-
-Lemma pred_in_dom': forall Cl S,
-  pred S Cl ->
-  exists CD, find_refinement Cl CD.
-Proof.
-Admitted.
-
 Lemma ClassesRefinementOK': forall R, 
   In R RT -> 
   CRType_OK R.
 Proof.
   apply Forall_forall.
   exact RT_wellformed.
+Qed.
+
+
+Lemma pred_in_dom: forall Cl S,
+  pred S Cl ->
+  exists CD, find_refinement S CD.
+Proof.
+  assert (forall R, In R RT -> CRType_OK R). apply Forall_forall.
+  exact RT_wellformed. intros. destruct S. inversion H0. subst.
+Admitted.
+
+Lemma pred_in_dom': forall Cl S,
+  pred S Cl ->
+  exists CD, find_refinement Cl CD.
+Proof.
+  intros. destruct S. destruct Cl. inversion H. destruct CR. destruct r. subst.
+  unfold refinements_of in *.
+  apply nth_error_In in H6. apply filter_In in H6. destruct H6.
+  apply ClassesRefinementOK' in H0. inversion H0; eauto.
 Qed.
 
 Lemma ClassesRefinementOK: forall R RD, 

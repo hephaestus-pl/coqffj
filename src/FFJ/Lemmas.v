@@ -88,7 +88,7 @@ Ltac inv_all :=
 
 Ltac elim_eqs :=
   match goal with
-  | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inv_all; clear H1; subst
+  | [H: ?x = _, H1: ?x = _ |- _ ] => rewrite H in H1; inversion H1; inv_all; clear H1; subst
   end.
 
 Ltac unify_override :=
@@ -200,7 +200,7 @@ Proof.
   intros.
   inversion H2.
   repeat inv_decl. repeat unify_find_ref. subst. simpl in *. inversion H7; subst; clear H7.
-  repeat elim_eqs; reflexivity.
+  repeat elim_eqs. reflexivity.
 Qed.
 
 Lemma find_refinement_det: forall R RD1 RD2,
@@ -428,8 +428,7 @@ Proof.
     inversion H3. subst. crush. subst.
     repeat elim_eqs.
     subst. repeat elim_eqs. apply IHfields in H6; subst; eauto.
-Admitted.
-
+Qed.
 
 Ltac unify_fields :=
   match goal with
@@ -588,8 +587,8 @@ Proof.
   elim_eqs.
   destruct X with (f:= fun (l: [ClassRefinement]) => nth_error l n) (l:= refinements_of C).
   destruct s as [CR]. left. exists (class_name CR @ ref CR); eauto.
-  right. intros_all. inversion H; ecrush.
-  right; intros_all. inversion H; ecrush.
+  right. intros_all. inversion H. subst; crush.
+  right; intros_all. inversion H; subst; crush.
 Qed.
 
 Lemma last_refinement_fields: forall C CR CD,
