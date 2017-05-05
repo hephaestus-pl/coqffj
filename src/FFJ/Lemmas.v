@@ -71,7 +71,7 @@ Ltac inv_refname :=
   match goal with
   | [H: ?C @ ?feat = ?D @ ?feat' |- _ ] => inversion H; subst; clear H
   end.
-Check MDecl.
+
 Ltac inv_crefine:=
   match goal with
   | [H: CRefine _ _ _ _ _ _ _ _ = CRefine _ _ _ _ _ _ _ _ |- _ ] => inversion H; subst; clear H
@@ -99,7 +99,7 @@ Ltac unify_override :=
 Ltac pred_same_name :=
   match goal with
   | [H: pred (?C @ _) (?C @ _) |- _ ] => fail 1
-  | [H: pred ?R ?S |- _ ] => assert (class_name R = class_name S) by (apply (pred_same_cname _ _ H)); inv_decl; subst
+  | [H: pred ?R ?S |- _ ] => let H1:=fresh "H" in assert (class_name R = class_name S) as H1 by (apply (pred_same_cname _ _ H)); simpl in H1; try inv_decl; subst
   end.
 
 Ltac unify_find_ref :=
@@ -424,11 +424,11 @@ Proof.
     rewrite obj_notin_dom in H; crush.
     simpl in *; subst. repeat elim_eqs.
     apply IHfields in H7. subst. unify_fields_r. reflexivity.
-    elim_eqs.
+    repeat elim_eqs.
     inversion H3. subst. crush. subst.
     repeat elim_eqs.
     subst. repeat elim_eqs. apply IHfields in H6; subst; eauto.
-Qed.
+Admitted.
 
 
 Ltac unify_fields :=
@@ -514,25 +514,30 @@ Lemma mrefine_dec: forall m R,
 Proof.
 Admitted.
 
-Lemma mtyper_super_mtype: forall R Ds D0 Ds' D0' C D Fs noDupfs K Ms noDupMds m,
+Ltac refinement_OK R := 
+  match goal with
+  | [H: find_refinement R _ |- _] => apply ClassesRefinementOK in H; inversion H; clear H
+  end.
+
+Lemma mtyper_super_mtype: forall feat R Ds D0 Ds' D0' C D Fs noDupfs K Ms noDupMds m,
   find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->
-  last_refinement C = Some R ->
+  R = C @ feat ->
   mtype(m, D) = Ds ~> D0 ->
   mtype_r(m, R) = Ds' ~> D0' ->
   Ds = Ds' /\ D0 = D0'.
 Proof.
-  intros. last_OK R. remember (C@feat1). induction H2;unifall.
-  -  crush.
-  - induction H21; unifall.
-  - crush. 
-  unify_find_refinement. Forall_find_tac. mtypes_ok. unify_find_refinement. lastref_samename. repeat elim_eqs.
-
-
- gen C Mrs Ms1 feat1 fs0 Fs Ms H7. induction H2; intros; unifall. admit. admit.
-  eapply IHmtype_refinement; unifall.
-  - unify_find_refinement. Check Forall_find. eapply Forall_find in H8; eauto. inversion H8.
-  subst. Print override. edestruct H16; eauto. ecrush.
-Admitted.
+  intros. gen feat.
+  induction H2; intros.
+  - refinement_OK R; ecrush.
+  - assert (override_r m R (map fargType fargs) B). refinement_OK R. ecrush.
+    clear H2. clear H3.
+    gen feat fs noDupfDecls K0 mDecls noDupmDecls mRefines noDupmRefines.
+    induction H6; intros; unifall. (* induction on override_r *)
+    * class_OK C1; ecrush.
+    * refinement_OK (C1 @ feat0); ecrush.
+    * unifall. eapply IHoverride_r; eauto.
+  - destruct S; eapply IHmtype_refinement; ecrush.
+Qed.
 
 Lemma methods_same_signature': forall C R m Ds D0 D Fs noDupfs K Ms noDupMds,
   find C CT = Some (CDecl C D Fs noDupfs K Ms noDupMds) ->

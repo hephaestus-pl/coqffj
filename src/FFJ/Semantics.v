@@ -258,6 +258,12 @@ Proof.
   apply filter_In in H2.
 Admitted.
 
+Lemma pred_in_dom': forall Cl S,
+  pred S Cl ->
+  exists CD, find_refinement Cl CD.
+Proof.
+Admitted.
+
 Lemma ClassesRefinementOK': forall R, 
   In R RT -> 
   CRType_OK R.
