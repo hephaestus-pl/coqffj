@@ -64,13 +64,25 @@ Inductive Exp : Type :=
 Inductive Assignment :=
   | Assgnmt : Exp -> Exp -> Assignment.
 
+(* Constructor declaration \texttt{C(\={C}~\={f})\{super(\={f}); this.\={f}=\={f};\}} and a constructor refinement 
+ * \texttt{refines~C(\={E}~\={h}, \={C}~\={f}) \{original(\={f}); this.\={f}=\={f};\}} introduces a constructor with 
+ * for the class \texttt{C} with fields \texttt{\=f} of type \texttt{\=C}. The constructor declaration body is simply 
+ * a list of assignment of the arguments with its correspondent field preceded by calling its superclass constructor with the correspondent arguments.
+ * The constructor refinement only differs from constructor declaration that instead of calling the superclass constructor
+ * it will call its predecessor constructor (denoted by \texttt{original}).
+ *)
 Inductive Constructor :=
   | KDecl : id -> [FormalArg] -> [Argument] -> [Assignment] -> Constructor.
 
 Inductive ConstructorRefine :=
   | KRefine : id -> [FormalArg] -> [Argument] -> [Assignment] -> ConstructorRefine.
 
-
+(* Method declaration \texttt{C~m~(\={C}~\={x})\ \{return~e;\}} and method refinement \texttt{refines C~m~(\={C}~\={x})\ \{return~e;\}} 
+ * introduces a method \texttt{m} of return type \texttt{C} with arguments \texttt{\={C}~\={x}} and body \texttt{e}.
+ * Method declarations should only appear inside a class declaration or a class refinement, whereas method refinement should only appear
+ * inside a class refinement. There is such a distinction between method declaration and method refinement for allowing the type checker
+ * to recognize the difference between method refinement and inadvertent overriding/replacement.
+ *)
 Inductive MethodDecl :=
   (* MDecl is the return of the method, its name and nonduplicate list of formal args *)
   | MDecl : ClassName -> id -> forall (fargs: [FormalArg]), NoDup (this :: refs fargs) -> Exp -> MethodDecl.
@@ -123,9 +135,16 @@ Instance RefinementNameFeature: Referable RefinementName :={
    | (RName _ feat) => feat end
 }.
 
+(* A class declaration \texttt{class\ C~extends~D\ \{\={C} \={f}; K \={M}\}} 
+ * introduces a class \texttt{C} with superclass \texttt{D}. This class has fields \texttt{\=f}
+ * of type \texttt{C}, a constructor \texttt{K} and methdos \texttt{\=M}. The fields of class \texttt{C}
+ * is \texttt{\=f} added to the fields of its superclass \texttt{D}, all of them must have distinct names.
+ * Methods, in the other, hand may override another superclass method with the same name.
+ * Method override both in FJ and FFJ is basically method rewrite. 
+ * Methods are uniquely identified by its name, i.e. overload is not supported.
+ *)
+
 Inductive ClassDecl :=
-  (* CDecl is the name of the class, the superclass, non duplicate fields,
-  constructor and non duplicate methods *)
   | CDecl: ClassName -> ClassName -> 
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> Constructor -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) -> ClassDecl.
@@ -136,6 +155,12 @@ Instance CDeclRef : Referable ClassDecl :={
    | CDecl cref _ _ _ _ _ _ => cref end
 }.
 
+(* A class refinement \texttt{refines~class~R~\{\={C}~\={f};~KD~\={M}~\={MR}\}}
+ * introduces a refinement of the class \texttt{C}. 
+ * This refinement contains the fields  \texttt{\=f} of type \texttt{\=C}, 
+ * a constructor refinement \texttt{KR}, methods declarations \texttt{\=M} and method refinements \texttt{\={MR}}.
+ * Like class declarations, the fields of a class refinement \texttt{R} are added to the fields of its predecessor.
+ *)
 Inductive ClassRefinement :=
   (* CRefine is the name of the class
   , non duplicate fields,
