@@ -139,7 +139,7 @@ Inductive ComputationStar : Exp -> Exp -> Prop :=
   | Comp_Trans: forall e1 e2 e3,
     e1 ~>* e2 ->
     e2 ~>* e3 ->
-    e1 ~>* e2
+    e1 ~>* e3
   where "e '~>*' e1" := (ComputationStar e e1).
 Hint Constructors Computation ExpTyping Value ComputationStar.
 Definition normal_form {X:Type} (R: relation X) (t: X) :=
