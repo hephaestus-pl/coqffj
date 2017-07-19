@@ -113,28 +113,6 @@ Instance MRefineRef : Referable MethodRefinement :={
 *)
 Definition FeatureName := id.
 
-Inductive RefinementName: Type :=
-  | RName : ClassName -> FeatureName -> RefinementName.
-
-Notation "C @ Feat" := (RName C Feat) (at level 30).
-Parameter ObjectRefinement : RefinementName.
-
-Class ClassNameRef (A: Set):={
-  class_name : A -> id
-}.
-
-Instance RefinementNameCName: ClassNameRef RefinementName :={
-  class_name C :=
-  match C with
-  | (RName i _) => i end
-}.
-
-Instance RefinementNameFeature: Referable RefinementName :={
-  ref C :=
-  match C with 
-   | (RName _ feat) => feat end
-}.
-
 (* A class declaration \texttt{class\ C~extends~D\ \{\={C} \={f}; K \={M}\}} 
  * introduces a class \texttt{C} with superclass \texttt{D}. This class has fields \texttt{\=f}
  * of type \texttt{C}, a constructor \texttt{K} and methdos \texttt{\=M}. The fields of class \texttt{C}
@@ -165,82 +143,128 @@ Inductive ClassRefinement :=
   (* CRefine is the name of the class
   , non duplicate fields,
   constructor and non duplicate methods *)
-  | CRefine: RefinementName ->
+  | CRefine: ClassName ->
     forall (fDecls:[FieldDecl]), NoDup (refs fDecls) -> ConstructorRefine -> 
     forall (mDecls:[MethodDecl]), NoDup (refs mDecls) ->
     forall (mRefines:[MethodRefinement]), NoDup (refs mRefines) ->
     ClassRefinement.
 
-Instance CRefinementCName: ClassNameRef ClassRefinement :={
-  class_name CR := 
-  match CR with 
-  | (CRefine (RName cname _) _ _ _ _ _ _ _) => cname
-  end
-}.
-
 Instance CRefinementFeat: Referable ClassRefinement :={
   ref R :=
   match R with 
-   | (CRefine Cref _ _ _ _ _ _ _) => ref Cref end
+   | (CRefine cname _ _ _ _ _ _ _) => cname end
 }.
-
-Instance CRefinementOrCName: ClassNameRef (ClassName + RefinementName):={
-  class_name Cl :=
-  match Cl with
-  | inl C => C
-  | inr R => class_name R
-  end
-}.
-
-Inductive Program :=
-  | CProgram : forall (cDecls: [ClassDecl]), NoDup (refs cDecls) -> Exp -> Program.
 
 (* We assume a fixed Class Table *)
 Parameter CT: [ClassDecl].
 
 (* And a fixed Refinement Table *)
-Parameter RT: [ClassRefinement].
+Parameter RT: env ([ClassRefinement]).
 
-Definition refinements_of (C: ClassName) :=
-  filter (fun R => beq_id C (class_name R)) RT.
+Fixpoint refinements_of' (C: ClassName) (RT': env ([ClassRefinement])) : [FeatureName * ClassRefinement]:=
+  match RT' with
+  | nil => nil
+  | (f_name, crs) :: RT_tail => 
+    match (find C crs) with
+    | None => (refinements_of' C RT_tail)
+    | Some cr => (f_name, cr) :: (refinements_of' C RT_tail)
+    end
+  end.
+
+Definition refinements_of (C: ClassName) := refinements_of' C RT.
+Inductive RefinementName: Type := 
+  | RName : FeatureName -> ClassName -> RefinementName .
+Notation "C @ feat" := (RName feat C) (at level 30).
+
+
+Instance RNameRef : Referable RefinementName :={
+  ref R := 
+  match R with RName _ cname => cname end
+}.
+
+Instance RefinementsReferable: Referable (FeatureName * ClassRefinement) :={
+  ref R :=
+    match R with
+    | (f_name, cr) => f_name
+    end
+}.
+
+Definition feature_name (R: RefinementName) :=
+  match R with RName fname _ => fname end.
+
+Fixpoint get_decl (f_name: FeatureName) (Rs: [FeatureName * ClassRefinement]) :=
+  match Rs with
+  | nil => None 
+  | (f_name', cr) :: xs => 
+    if (beq_id f_name f_name') 
+    then Some cr
+    else get_decl f_name xs
+  end.
+
+Definition find_refinement_func (R: RefinementName): option ClassRefinement :=
+    match R with C @ feat =>
+    match refinements_of C with Rs =>
+    match get_decl feat Rs with
+    | Some RDecl => Some RDecl
+    | None => None
+    end end end.
 
 Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
   | R_Find : forall C feat Rs,
     R = C @ feat ->
     refinements_of C = Rs ->
-    find feat Rs = Some RDecl ->
+    get_decl feat Rs = Some RDecl ->
     find_refinement R RDecl.
 
-Definition find_refinement_func (R: RefinementName): option ClassRefinement :=
-    match R with C @ feat =>
-    match refinements_of C with Rs =>
-    match find feat Rs with
-    | Some RDecl => Some RDecl
-    | None => None
-    end end end.
 Hint Unfold find_refinement_func.
 
 Lemma refinements_same_name: forall C,
-  Forall (fun R => C = (class_name R)) (refinements_of C).
+  Forall (fun R => C = ref R) (map snd (refinements_of C)).
 Proof.
-  Hint Resolve beq_id_eq.
-  intros. 
+  Hint Resolve beq_id_eq. Hint Rewrite find_ref_inv.
+  intros.
   unfold refinements_of.
-  apply Forall_forall. intros.
-  apply filter_In in H. crush.
+  induction RT. crush.
+  destruct a. simpl in *. 
+  assert ({(exists x, find C l = Some x)} + {find C l= None}). apply find_dec.
+  destruct H. destruct e0. rewrite H.
+  rewrite map_cons. simpl. constructor. crush. apply find_ref_inv in H. crush.
+  auto.
+  rewrite e0. auto.
+Qed.
+
+Lemma get_decl_In: forall rs CR feat,
+  get_decl feat rs = Some CR ->
+  In CR (map snd rs).
+Proof.
+  intros. induction rs. crush.
+  simpl in *. destruct a.
+  case (beq_id feat f) in H.
+  inversion H. auto. right; auto.
 Qed.
 
 Lemma find_refinement_same_refinement: forall R CR, 
   find_refinement R CR ->
-  class_name R = class_name CR /\ ref R = ref CR.
+  ref R = ref CR.
 Proof.
   induction 1. subst. 
-  lets ?H: refinements_same_name C. 
-destruct CR as [r]; destruct r; simpl in *.
-  rewrite Forall_forall in H.
-  specialize H with (CRefine (c0 @ f) fDecls n c mDecls n0 mRefines n1).
-  split. apply find_in in H1. apply H in H1. auto.
-  apply find_ref_inv in H1. eauto.
+  lets ?H: refinements_same_name C.
+  rewrite Forall_forall in H. apply get_decl_In in H1.
+  apply H in H1. crush.
+Qed.
+
+Lemma get_decl_dec: forall f cr,
+  {x | get_decl f cr = Some x} + {get_decl f cr = None}.
+Proof.
+  intros. induction cr. crush.
+  destruct IHcr. destruct a.
+  destruct (beq_id_dec) with f f0. subst.
+  left. simpl. exists c. rewrite beq_id_refl. auto.
+  left. simpl. rewrite not_eq_beq_id_false; auto.
+  destruct a. 
+  destruct (beq_id_dec) with f f0. subst.
+  left. simpl. exists c. rewrite beq_id_refl. auto.
+  right. simpl. rewrite not_eq_beq_id_false; auto.
 Qed.
 
 Lemma find_refinement_reflected: forall R CR,
@@ -250,8 +274,9 @@ Proof.
   destruct H. crush.
   intros.
   unfold find_refinement_func in H. destruct R.
-  destruct find_dec with (refinements_of c) f. destruct e. rewrite H0 in H.
-  eapply R_Find; crush. rewrite e in H. inversion H.
+  destruct get_decl_dec with f (refinements_of c). destruct s.
+  rewrite e in H. eapply R_Find; crush.
+  rewrite e in H; crush.
 Qed.
 
 Lemma find_refinement_dec: forall R,
@@ -260,9 +285,10 @@ Proof.
   intros.
   assert ({exists CR', find_refinement_func R = Some CR'} + {find_refinement_func R = None}).
   destruct R.
-  destruct find_dec with (refinements_of c) f;  unfold find_refinement_func.
+  destruct find_dec with (refinements_of c) f;  unfold find_refinement_func;
+  destruct (get_decl f (refinements_of c)).
   left.  destruct e. eexists; crush.
-  right. crush.
+  right. crush. left. eexists; crush. auto.
   destruct H. left. destruct e. exists x. apply find_refinement_reflected; auto.
   right. intros_all. apply find_refinement_reflected in H. crush.
 Qed.
