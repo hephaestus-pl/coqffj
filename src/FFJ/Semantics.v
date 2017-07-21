@@ -218,13 +218,14 @@ Inductive NoDup_fields: RefinementName -> Prop :=
     NoDup (refs (fs' ++ fs))->
     NoDup_fields R.
 
-Inductive CRType_OK: ClassRefinement -> Prop :=
-  | TR_Refinement : forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines,
-      find_refinement R (CRefine (ref R) fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+Inductive CRType_OK: FeatureName -> ClassRefinement -> Prop :=
+  | TR_Refinement : forall C R f fs noDupfs K Ms noDupMds mRefines noDupmRefines,
+      find_refinement R (CRefine C fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
       NoDup_fields R ->
       Forall (MType_r_OK R) Ms ->
       Forall (MRType_r_OK R) (mRefines) ->
-      CRType_OK (CRefine (ref R) fs noDupfs K Ms noDupMds mRefines noDupmRefines).
+      R = C @ f ->
+      CRType_OK f (CRefine C fs noDupfs K Ms noDupMds mRefines noDupmRefines).
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
@@ -244,20 +245,24 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
   D <> Object ->
   exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
 
-Hypothesis RT_wellformed:
-  Forall (fun CR => CRType_OK CR) (Im RT).
+Hypothesis RT_wellformed: forall f CR,
+  get RT f = Some CR -> 
+  Forall (fun CR => CRType_OK f CR) CR.
 
-Lemma ClassesRefinementOK': forall R, 
-  In R (Im RT) -> 
-  CRType_OK R.
+(*
+Lemma ClassesRefinementOK': forall f R, 
+  In (f, R) RT -> 
+  CRType_OK f R.
 Proof.
   apply Forall_forall.
   exact RT_wellformed.
 Qed.
+*)
 
-Lemma In_refinements_find: forall C f R,
-  In (f, R) (refinements_of C) ->
-  In R (Im RT).
+Lemma nth_error_In_RT: forall C n f CR,
+nth_error (refinements_of C) n = Some (f, CR) -> 
+exists CRs, get RT f = Some CRs /\
+In CR CRs.
 Proof.
   intros. unfold refinements_of in *.
 Admitted.
@@ -267,10 +272,11 @@ Lemma pred_in_dom': forall Cl S,
   exists CD, find_refinement Cl CD.
 Proof.
   intros. destruct S. destruct Cl. inversion H. destruct CR. destruct RDecl. subst.
-  apply nth_error_In in H6. inversion H7; subst.
-  
-  eapply In_refinements_find in H6.
-  apply ClassesRefinementOK' in H6. inversion H6. destruct R.
+  inversion H7; subst.
+  apply nth_error_In_RT in H6. destruct H6. destruct H0.
+  apply RT_wellformed in H0.
+  rewrite Forall_forall in H0. apply H0 in H1. 
+  inversion H1; subst; eauto.
 Qed.
 
 Lemma ClassesRefinementOK: forall R RD, 

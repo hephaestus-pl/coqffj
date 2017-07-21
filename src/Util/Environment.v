@@ -219,3 +219,7 @@ Proof.
   induction 1; crush.
   eapply get_combine; eauto.
 Qed.
+
+Theorem get_iff_In: forall b x xs,
+  get xs x = Some b <->
+  In (b, x) xs.
