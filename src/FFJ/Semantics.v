@@ -170,7 +170,7 @@ Inductive MType_r_OK : RefinementName -> MethodDecl -> Prop :=
             E0 <: C0 ->
             R = C @ feat ->
             find C CT = Some (CDecl C D fs' noDupfDecls' K' Ms' noDupMds') ->
-            find_refinement R (CRefine R fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
+            find_refinement R (CRefine (ref R) fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
             override m D Cs C0 ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
@@ -183,7 +183,7 @@ Inductive MRType_r_OK: RefinementName -> MethodRefinement -> Prop :=
             nil extds (this :: xs) : (C :: Cs) |-- e0 : E0 ->
             E0 <: C0 ->
             R = C @ feat ->
-            find_refinement R (CRefine R fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
+            find_refinement R (CRefine (ref R) fs noDupfDecls K Ms noDupmDecls mRefines noDupmRefines) ->
             map fargType fargs = Cs ->
             refs fargs = xs ->
             find m mRefines = Some (MRefine C0 m fargs noDupFargs e0) ->
@@ -206,25 +206,25 @@ Inductive CType_OK: ClassDecl -> Prop :=
 
 Inductive NoDup_fields: RefinementName -> Prop :=
   | NoDup_Pred: forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines P fs',
-    find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+    find_refinement R (CRefine (ref R) fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
     pred R P ->
     fields_r P fs' ->
     NoDup (refs (fs' ++ fs))->
     NoDup_fields R
   | NoDup_First: forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines fs',
-    find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+    find_refinement R (CRefine (ref R) fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
     first_refinement R ->
-    fields (class_name R) fs' ->
+    fields (ref R) fs' ->
     NoDup (refs (fs' ++ fs))->
     NoDup_fields R.
 
 Inductive CRType_OK: ClassRefinement -> Prop :=
   | TR_Refinement : forall R fs noDupfs K Ms noDupMds mRefines noDupmRefines,
-      find_refinement R (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
+      find_refinement R (CRefine (ref R) fs noDupfs K Ms noDupMds mRefines noDupmRefines) ->
       NoDup_fields R ->
       Forall (MType_r_OK R) Ms ->
       Forall (MRType_r_OK R) (mRefines) ->
-      CRType_OK (CRefine R fs noDupfs K Ms noDupMds mRefines noDupmRefines).
+      CRType_OK (CRefine (ref R) fs noDupfs K Ms noDupMds mRefines noDupmRefines).
 
 (* Hypothesis for ClassTable sanity *)
 Module CTSanity.
@@ -245,24 +245,32 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
   exists D0 Fs0 noDupfs0 K0 Ms0 noDupMds0, find D CT = Some (CDecl D D0 Fs0 noDupfs0 K0 Ms0 noDupMds0).
 
 Hypothesis RT_wellformed:
-  Forall (fun CR => CRType_OK CR) RT.
+  Forall (fun CR => CRType_OK CR) (Im RT).
 
 Lemma ClassesRefinementOK': forall R, 
-  In R RT -> 
+  In R (Im RT) -> 
   CRType_OK R.
 Proof.
   apply Forall_forall.
   exact RT_wellformed.
 Qed.
 
+Lemma In_refinements_find: forall C f R,
+  In (f, R) (refinements_of C) ->
+  In R (Im RT).
+Proof.
+  intros. unfold refinements_of in *.
+Admitted.
+
 Lemma pred_in_dom': forall Cl S,
   pred S Cl ->
   exists CD, find_refinement Cl CD.
 Proof.
-  intros. destruct S. destruct Cl. inversion H. destruct CR. destruct r. subst.
-  unfold refinements_of in *.
-  apply nth_error_In in H6. apply filter_In in H6. destruct H6.
-  apply ClassesRefinementOK' in H0. inversion H0; eauto.
+  intros. destruct S. destruct Cl. inversion H. destruct CR. destruct RDecl. subst.
+  apply nth_error_In in H6. inversion H7; subst.
+  
+  eapply In_refinements_find in H6.
+  apply ClassesRefinementOK' in H6. inversion H6. destruct R.
 Qed.
 
 Lemma ClassesRefinementOK: forall R RD, 

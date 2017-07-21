@@ -161,7 +161,7 @@ Parameter CT: [ClassDecl].
 (* And a fixed Refinement Table *)
 Parameter RT: env ([ClassRefinement]).
 
-Fixpoint refinements_of' (C: ClassName) (RT': env ([ClassRefinement])) : [FeatureName * ClassRefinement]:=
+Fixpoint refinements_of' (C: ClassName) (RT': env ([ClassRefinement])) : (env ClassRefinement):=
   match RT' with
   | nil => nil
   | (f_name, crs) :: RT_tail => 
@@ -217,9 +217,10 @@ Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
     find_refinement R RDecl.
 
 Hint Unfold find_refinement_func.
+Notation "'Im' RT" := (flat_map snd RT) (at level 30, no associativity).
 
 Lemma refinements_same_name: forall C,
-  Forall (fun R => C = ref R) (map snd (refinements_of C)).
+  Forall (fun R => C = ref R) (Img (refinements_of C)).
 Proof.
   Hint Resolve beq_id_eq. Hint Rewrite find_ref_inv.
   intros.
@@ -227,7 +228,7 @@ Proof.
   induction RT. crush.
   destruct a. simpl in *. 
   assert ({(exists x, find C l = Some x)} + {find C l= None}). apply find_dec.
-  destruct H. destruct e0. rewrite H.
+  destruct H. destruct e0. rewrite H. unfold Img.
   rewrite map_cons. simpl. constructor. crush. apply find_ref_inv in H. crush.
   auto.
   rewrite e0. auto.
@@ -235,7 +236,7 @@ Qed.
 
 Lemma get_decl_In: forall rs CR feat,
   get_decl feat rs = Some CR ->
-  In CR (map snd rs).
+  In CR (Img rs).
 Proof.
   intros. induction rs. crush.
   simpl in *. destruct a.

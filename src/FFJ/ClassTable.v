@@ -26,25 +26,26 @@ Tactic Notation "subtype_cases" tactic(first) ident(c) :=
   | Case_aux c "S_Decl"].
 
 Inductive pred: RefinementName -> RefinementName -> Prop :=
-  | P_Refine : forall C Rs feat n CR,
+  | P_Refine : forall C Rs feat feat' n CR RDecl,
     refinements_of C = Rs ->
-    find_where feat (refs Rs) = Some (S n) ->
+    find_where feat (Dom Rs) = Some (S n) ->
     nth_error Rs n = Some CR ->
-    pred (C @ feat) (class_name CR @ ref CR).
+    CR = (feat', RDecl) ->
+    pred (C @ feat) (ref RDecl @ feat').
 
 Fixpoint pred_func (R: RefinementName): option RefinementName :=
   match R with C @ feat =>
-  match find_where feat (refs (refinements_of C)) with
+  match find_where feat (Dom (refinements_of C)) with
   | None => None
   | Some 0 => None
   | Some (S n) => match nth_error (refinements_of C) n with
     | None => None
-    | Some CR => Some (class_name CR @ ref CR)
+    | Some (feat', RDecl) => Some (ref RDecl @ feat')
   end end end.
 
 Definition last_refinement (C: ClassName): option RefinementName :=
   match last_error (refinements_of C) with
-  | Some R => Some (class_name R @ ref R)
+  | Some (feat, RDecl) => Some (ref RDecl @ feat)
   | None => None
   end.
 
@@ -53,13 +54,13 @@ Definition first_refinement (R: RefinementName) : Prop := forall S, ~pred R S.
 Inductive fields_r : RefinementName -> [FieldDecl] -> Prop :=
   | F_Refine: forall R S fs fpred noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     pred R S ->
-    find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_r S fpred ->
     NoDup (refs (fpred ++ fs)) ->
     fields_r R (fpred ++ fs)
   | F_First: forall R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     first_refinement R ->
-    find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     fields_r R fs.
 
 Hint Constructors pred.
@@ -86,13 +87,13 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
 
 Inductive mnotin_refinement (m: id) (R: RefinementName) : Prop :=
   | notin_first : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               find m mRefines = None ->
               first_refinement R ->
               mnotin_refinement m R
   | notin_pred : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               find m mRefines = None ->
               pred R S -> 
@@ -105,18 +106,18 @@ Definition mnotin_last_refinement (m: id) (C: ClassName) :=
 Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=
   | mtyr_decl_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype_r(m, R) = Bs ~> B
   | mtyr_refinement_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs e,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
               map fargType fargs = Bs ->
               mtype_r(m, R) = Bs ~> B
   | mtyr_pred: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None  ->
               find m mRefines = None->
               pred R S ->
@@ -160,18 +161,18 @@ Tactic Notation "mtype_cases" tactic(first) ident(c) :=
 Reserved Notation "'mbody_r(' m ',' R ')' '=' xs 'o' e" (at level 40, xs at next level).
 Inductive mbody_refinement (m: id) (R: RefinementName) (xs: [id]) (e: Exp): Prop :=
   | mbodyr_ok : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody_r(m, R) = xs o e
   | mbodyr_refine : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines fargs noDupfargs B,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               find m mRefines = Some (MRefine B m fargs noDupfargs e) ->
               refs fargs = xs ->
               mbody_r(m, R) = xs o e
   | mbodyr_pred: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+              find_refinement R (CRefine (ref R) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
               find m mDecls = None ->
               find m mRefines = None->
               pred R S ->
@@ -241,7 +242,7 @@ Inductive override_r (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassNam
     override_r m R Cs C0  
   | O_Pred_Decl: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines Cs' B fargs noDupfargs e,
     pred R S ->
-    find_refinement S (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find_refinement S (CRefine (ref S) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     find m mDecls = Some (MDecl B m fargs noDupfargs e) ->
     map fargType fargs = Cs' ->
     Cs' = Cs ->
@@ -249,7 +250,7 @@ Inductive override_r (m: id) (R: RefinementName) (Cs: [ClassName]) (C0: ClassNam
     override_r m R Cs C0
   | O_Pred_Next: forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
     pred R S ->
-    find_refinement S (CRefine S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
+    find_refinement S (CRefine (ref S) fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
     find m mDecls = None ->
     override_r m S Cs C0 ->
     override_r m R Cs C0.
@@ -263,11 +264,12 @@ Qed.
 
 Lemma pred_same_cname: forall Cl R,
   pred Cl R ->
-  class_name Cl = class_name R.
+  ref Cl = ref R.
 Proof.
-  induction 1; crush. destruct CR. destruct r.
+  induction 1; crush. destruct RDecl.
   lets ?H: refinements_same_name C.
-  apply nth_error_In in H1. rewrite Forall_forall in H. eapply H in H1.
+  apply nth_error_In in H1. apply In_pair_map in H1.
+  rewrite Forall_forall in H. eapply H in H1.
   eauto.
 Qed.
 

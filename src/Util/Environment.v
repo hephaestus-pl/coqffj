@@ -27,6 +27,9 @@ Notation " m 'extd' id ':' val" := (m :> (id, val)) (at level 20, id at next lev
 Notation " m 'extds' ids ':' vals" := (m ++ (combine ids vals)) (at level 20, ids at next level).
 
 Definition Dom {A:Type} (m: env A):= map fst m.
+Definition Img {A:Type} (m: env A):= map snd m.
+
+Hint Unfold Dom Img.
 
 Lemma cons_snoc_empty
  :  forall A (x: A)

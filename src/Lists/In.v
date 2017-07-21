@@ -33,3 +33,9 @@ Proof.
   destruct n; crush.
   specialize IHl with n x; crush.
 Qed.
+
+Lemma In_pair_map: forall {A B: Type} (a:A) (b:B) l,
+  In (a, b) l -> In b (map snd l).
+Proof.
+  intros. induction l; crush.
+Qed.
