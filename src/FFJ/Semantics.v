@@ -249,20 +249,13 @@ Hypothesis RT_wellformed: forall f CR,
   get RT f = Some CR -> 
   Forall (fun CR => CRType_OK f CR) CR.
 
-(*
-Lemma ClassesRefinementOK': forall f R, 
-  In (f, R) RT -> 
-  CRType_OK f R.
-Proof.
-  apply Forall_forall.
-  exact RT_wellformed.
-Qed.
-*)
+Hypothesis NoDupFeatName:
+  NoDup (Dom RT).
 
 Lemma nth_error_In_RT: forall C n f CR,
-nth_error (refinements_of C) n = Some (f, CR) -> 
-exists CRs, get RT f = Some CRs /\
-In CR CRs.
+  nth_error (refinements_of C) n = Some (f, CR) -> 
+  exists CRs, get RT f = Some CRs /\
+  In CR CRs.
 Proof.
   intros. unfold refinements_of in *.
 Admitted.
@@ -279,17 +272,56 @@ Proof.
   inversion H1; subst; eauto.
 Qed.
 
-Lemma ClassesRefinementOK: forall R RD, 
-  find_refinement R RD ->
-  CRType_OK RD.
+
+Lemma get_decl_In: forall C RT' f RD,
+  get_decl f (refinements_of' C RT') = Some RD ->
+  In f (Dom RT').
 Proof.
-  intros. inversion H. subst.
-  apply find_in in H2.
-  unfold refinements_of in H2.
-  apply filter_In in H2. destruct H2.
-  eapply ClassesRefinementOK'; eauto.
+  intros. induction RT'. crush.
+  destruct a. simpl in *.   
+  assert ({exists x, find C l = Some x} + {find C l = None}). apply find_dec.
+  destruct H0. destruct e. rewrite H0 in *. simpl in *.
+  destruct beq_id_dec with f n. left; auto.
+  right. rewrite not_eq_beq_id_false in H; auto.
+  rewrite e in H; auto.
 Qed.
-Hint Resolve ClassesRefinementOK  ClassesRefinementOK' pred_in_dom'.
+
+Lemma get_decl_get: forall feat0 C RD,
+  get_decl feat0 (refinements_of C) = Some RD ->
+  exists Rs', get RT feat0 = Some Rs'/\
+  In RD Rs'.
+Proof.
+  intros. unfold refinements_of in *.
+  assert (NoDup (Dom RT)) as Hx. apply NoDupFeatName.
+  induction RT. crush.
+  simpl in *. destruct a.
+  assert ({exists x, find C l = Some x} + {find C l = None}). apply find_dec.
+  destruct H0. destruct e0; subst. rewrite H0 in *. simpl in *.
+  destruct beq_id_dec with feat0 n. subst. rewrite beq_id_refl in *.
+  inversion H. subst. exists l.
+  split; auto. apply find_in in H0. auto.
+  rewrite not_eq_beq_id_false in *; auto. inversion Hx. auto.
+
+  rewrite e0 in *.
+  destruct beq_id_dec with feat0 n. subst. 
+  rewrite beq_id_refl. inversion Hx. subst.  
+
+  apply get_decl_In in H; contradiction.
+  inversion Hx.
+  rewrite not_eq_beq_id_false in *; auto.
+Qed.
+
+Lemma ClassesRefinementOK: forall C feat RD, 
+  find_refinement (C@feat) RD ->
+  CRType_OK feat RD.
+Proof.
+  intros. inversion H. inversion H0. subst.
+  apply get_decl_get in H2.
+  destruct H2. destruct H1.
+  apply RT_wellformed in H1. rewrite Forall_forall in H1.
+  auto.
+Qed.
+Hint Resolve ClassesRefinementOK pred_in_dom'.
 
 
 Hypothesis ClassesOK: forall C CD, 

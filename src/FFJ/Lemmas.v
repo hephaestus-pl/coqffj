@@ -99,7 +99,7 @@ Ltac unify_override :=
 Ltac pred_same_name :=
   match goal with
   | [H: pred (?C @ _) (?C @ _) |- _ ] => fail 1
-  | [H: pred ?R ?S |- _ ] => let H1:=fresh "H" in assert (class_name R = class_name S) as H1 by (apply (pred_same_cname _ _ H)); simpl in H1; try inv_decl; subst
+  | [H: pred ?R ?S |- _ ] => let H1:=fresh "H" in assert (ref R = ref S) as H1 by (apply (pred_same_cname _ _ H)); simpl in H1; try inv_decl; subst
   end.
 
 Ltac unify_find_ref :=
@@ -116,9 +116,9 @@ Lemma opt_fun_dec: forall A (l: [A]) (f: [A] -> option A),
 Proof. crush. destruct f as [|a]; crush. left; exists a; auto.
 Qed.
 
-Lemma last_error_refinement: forall C R,
+Lemma last_error_refinement: forall C R f,
   last_refinement C = Some R ->
-  exists CR, last_error (refinements_of C) = Some CR /\ (class_name CR @ ref CR = R).
+  exists CR, last_error (refinements_of C) = Some (f, CR) /\ (f @ ref CR = R).
 Proof.
   intros. unfold last_refinement in *.
   destruct opt_fun_dec with ClassRefinement (refinements_of C) (last_error: [ClassRefinement] -> option ClassRefinement).
@@ -128,7 +128,7 @@ Qed.
 
 Lemma last_refinement_same_name: forall C R, 
   last_refinement C = Some R ->
-  class_name R = C.
+  ref R = C.
 Proof.
   intros. apply last_error_refinement in H. decompose_exs. destruct H.
   apply last_in in H.
@@ -147,7 +147,7 @@ Ltac lastref_samename :=
 Hint Resolve last_refinement_same_name.
 
 Lemma last_refinement_in: forall C R, 
-  last_refinement C = Some R ->
+  last_refinement C = Some (f, R) ->
   exists CR, In CR RT /\ class_name CR = C /\ ref CR = ref R.
 Proof.
   intros. unfold last_refinement in H.
@@ -171,23 +171,6 @@ Proof.
   eexists; crush.
   exists x0. rewrite not_eq_beq_id_false; eauto. 
 Qed.
-
-(*
-Lemma last_refinement_find: forall C R,
-  last_refinement C = Some R ->
-  exists CR, find_refinement R CR.
-Proof.
-  Print find_refinement.
-  intros.
-  apply last_error_refinement in H. decompose_exs. destruct H.
-   lets ?H: refinements_same_name C.
-  rewrite Forall_forall in H1. eapply last_find in H. decompose_exs.
-  lets ?H: H. apply find_ref_inv in H.
-  apply find_in in H2. apply H1 in H2. subst.
-
-(* preciso que as feats sejam unicas *)
-Admitted.
-*)
 
 
 Lemma pred_det: forall R R' S,

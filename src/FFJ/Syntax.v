@@ -218,6 +218,7 @@ Inductive find_refinement (R: RefinementName) (RDecl: ClassRefinement): Prop :=
 
 Hint Unfold find_refinement_func.
 Notation "'Im' RT" := (flat_map snd RT) (at level 30, no associativity).
+Notation "'Im' RT" := (flat_map fst RT) (at level 30, no associativity).
 
 Lemma refinements_same_name: forall C,
   Forall (fun R => C = ref R) (Img (refinements_of C)).
