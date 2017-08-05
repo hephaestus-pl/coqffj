@@ -3,7 +3,7 @@ Feature Featherweight Java is a minimimum core calculus for Java formalized in [
 
 CoqFFJ is a mechanization of the standard theorems for type safety, i.e. progress and preservation, using coq. Built upon [CoqFJ](https://github.com/hephaestus-pl/coqfj) Release 1.1.
 
-To compile the code, simply run ```make``` at the root folder.
+To compile the code, you will need coq verision 8.5pl3 simply run ```make``` at the root folder.
 
 You can also generate the makefile from scratch running ```coq_makefile -f _CoqProject -o makefile```
 
