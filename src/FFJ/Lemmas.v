@@ -252,11 +252,7 @@ Lemma mnotin_notmtyper : forall R m,
   (mnotin_refinement m R ->
   forall Ds D, ~mtype_r(m, R) = Ds ~> D).
 Proof.
-  intros_all. gen Ds D.
-  induction H; let X:=fresh "H" in intros Ds D X; induction X; subst; repeat unify_find_refinement; crush.
-  destruct H2 with S; crush.
-  unify_pred.
-  eapply IHmnotin_refinement; eauto.
+  crush.
 Qed.
 
 Ltac notin_mtyper :=
@@ -511,7 +507,9 @@ Qed.
 Lemma mrefine_dec: forall m R,
   (exists Ds D0, mtype_r(m, R) = Ds ~> D0) \/ mnotin_refinement m R.
 Proof.
-Admitted.
+  intros; unfold mnotin_refinement.
+  destruct em with (A:= exists Ds D0, mtype_r( m ,R)= Ds ~> D0); ecrush.
+Qed.
 
 Ltac refinement_OK R := 
   match goal with
@@ -559,7 +557,9 @@ Proof.
       edestruct mtyper_super_mtype; ecrush.
     * find_dec_tac Ms m; unifall.
       + ecrush; eapply mty_ok; ecrush.
+        unfold mnotin_last_refinement. crush.
       + eapply mty_no_override; ecrush.
+        unfold mnotin_last_refinement. crush.
   - find_dec_tac Ms m; unifall.
     * ecrush; eapply mty_ok; ecrush.
     * eapply mty_no_override; ecrush.
