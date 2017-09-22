@@ -247,6 +247,9 @@ Hypothesis superClass_in_dom: forall C D Fs noDupfs K Ms noDupMds,
 Hypothesis RT_wellformed:
   Forall (fun CR => CRType_OK CR) RT.
 
+(*TODO: Not use Excluded middle *)
+Hypothesis em : forall A:Prop, A \/ ~ A.
+
 Lemma ClassesRefinementOK': forall R, 
   In R RT -> 
   CRType_OK R.

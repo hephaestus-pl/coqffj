@@ -84,23 +84,6 @@ Tactic Notation "fields_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "F_Obj" | Case_aux c "F_Decl"| Case_aux c "F_Decl_NoRefine"].
 
-Inductive mnotin_refinement (m: id) (R: RefinementName) : Prop :=
-  | notin_first : forall fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-              find m mDecls = None ->
-              find m mRefines = None ->
-              first_refinement R ->
-              mnotin_refinement m R
-  | notin_pred : forall S fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines,
-              find_refinement R (CRefine R fs noDupfDecls K mDecls noDupmDecls mRefines noDupmRefines) ->
-              find m mDecls = None ->
-              find m mRefines = None ->
-              pred R S -> 
-              mnotin_refinement m S ->
-              mnotin_refinement m R.
-
-Definition mnotin_last_refinement (m: id) (C: ClassName) :=
-  forall R, last_refinement C = Some R -> mnotin_refinement m R.
 
 Reserved Notation "'mtype_r(' m ',' R ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive mtype_refinement (m: id) (R: RefinementName) (Bs: [ClassName]) (B: ClassName): Prop :=
@@ -129,6 +112,14 @@ Tactic Notation "mtype_r_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "mtyr_decl_ok"         | Case_aux c "mtyr_refinement_ok"
   | Case_aux c "mtyr_pred" ].
+
+Definition mnotin_refinement (m: id) (R: RefinementName) :=
+  forall B Bs, ~mtype_r(m, R) = B ~> Bs.
+
+Definition mnotin_last_refinement (m: id) (C: ClassName) :=
+  forall R, last_refinement C = Some R -> mnotin_refinement m R.
+
+Hint Unfold mnotin_refinement mnotin_last_refinement.
 
 Reserved Notation "'mtype(' m ',' D ')' '=' c '~>' c0" (at level 40, c at next level).
 Inductive m_type (m: id) (C: ClassName) (Bs: [ClassName]) (B: ClassName) : Prop:=
